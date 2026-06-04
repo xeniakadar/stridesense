@@ -75,6 +75,22 @@ class Run(Base):
     start_lat: Mapped[float | None] = mapped_column(Float)
     start_lng: Mapped[float | None] = mapped_column(Float)
 
+    # Denormalized weather summary — computed once when weather samples are ingested.
+    # Used by similarity engine, fatigue scoring, and analytics queries for speed.
+    # Detailed per-sample data lives in run_weather_samples.
+    weather_temp_start_c: Mapped[float | None] = mapped_column(Float)
+    weather_temp_end_c: Mapped[float | None] = mapped_column(Float)
+    weather_temp_max_c: Mapped[float | None] = mapped_column(Float)
+    weather_temp_min_c: Mapped[float | None] = mapped_column(Float)
+    weather_apparent_temp_max_c: Mapped[float | None] = mapped_column(Float)
+    weather_humidity_avg: Mapped[float | None] = mapped_column(Float)
+    weather_wind_speed_avg_kmh: Mapped[float | None] = mapped_column(Float)
+    weather_precipitation_total_mm: Mapped[float | None] = mapped_column(Float)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

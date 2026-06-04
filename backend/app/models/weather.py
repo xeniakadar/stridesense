@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, Index, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, Float, ForeignKey, Index, Integer, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,4 +38,47 @@ class WeatherObservation(Base):
     __table_args__ = (
         UniqueConstraint("lat", "lng", "observed_at", name="uq_weather_location_time"),
         Index("ix_weather_location_time", "lat", "lng", "observed_at"),
+    )
+
+class RunWeatherSample(Base):
+    """Per-run weather samples — captures how conditions changed over a single run.
+
+    For short runs (<60 min), there's typically one sample at elapsed_seconds=0.
+    For long runs, samples are taken hourly so the temperature/humidity curve
+    over the run is preserved for analytics and insights.
+
+    Data is denormalized from weather_observations for read speed: the cache row
+    may be evicted or refreshed, but the run's historical weather record stays.
+    """
+
+    __tablename__ = "run_weather_samples"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    run_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("runs.id", ondelete="CASCADE"), nullable=False
+    )
+    # Optional link back to the cache row this sample was sourced from
+    weather_observation_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("weather_observations.id", ondelete="SET NULL")
+    )
+
+    elapsed_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    # Denormalized weather values — durable copy in case the cache row goes away
+    temperature_c: Mapped[float | None] = mapped_column(Float)
+    apparent_temperature_c: Mapped[float | None] = mapped_column(Float)
+    humidity: Mapped[float | None] = mapped_column(Float)
+    wind_speed_kmh: Mapped[float | None] = mapped_column(Float)
+    precipitation_mm: Mapped[float | None] = mapped_column(Float)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint("run_id", "elapsed_seconds", name="uq_run_weather_sample"),
+        Index("ix_run_weather_run_elapsed", "run_id", "elapsed_seconds"),
     )

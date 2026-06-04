@@ -3,7 +3,7 @@ from app.models.oauth import OAuthConnection
 from app.models.recovery import CycleRecord, SleepRecord
 from app.models.run import Run
 from app.models.user import User
-from app.models.weather import WeatherObservation
+from app.models.weather import RunWeatherSample, WeatherObservation
 
 __all__ = [
     "User",
@@ -11,6 +11,7 @@ __all__ = [
     "SleepRecord",
     "CycleRecord",
     "WeatherObservation",
+    "RunWeatherSample",
     "OAuthConnection",
     "ImportJob",
 ]
