@@ -1,4 +1,5 @@
 from functools import lru_cache
+from uuid import UUID
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     database_url: str
     redis_url: str
     backend_cors_origins: str = "http://localhost:3000"
+    dev_user_id: UUID
 
     @property
     def cors_origins_list(self) -> list[str]:
