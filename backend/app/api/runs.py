@@ -1,0 +1,75 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.deps import get_current_user_id, get_session
+from app.schemas.run import RunCreate, RunRead, RunUpdate
+from app.services import (
+    RunNotFoundError,
+    create_run,
+    delete_run,
+    get_run,
+    list_runs,
+    update_run,
+)
+
+router = APIRouter(prefix="/runs", tags=["runs"])
+
+
+@router.post("", response_model=RunRead, status_code=status.HTTP_201_CREATED)
+async def create_run_endpoint(
+    payload: RunCreate,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> RunRead:
+    run = await create_run(session, user_id, payload)
+    return RunRead.model_validate(run)
+
+
+@router.get("", response_model=list[RunRead])
+async def list_runs_endpoint(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[RunRead]:
+    runs = await list_runs(session, user_id)
+    return [RunRead.model_validate(r) for r in runs]
+
+
+@router.get("/{run_id}", response_model=RunRead)
+async def get_run_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> RunRead:
+    try:
+        run = await get_run(session, user_id, run_id)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return RunRead.model_validate(run)
+
+
+@router.put("/{run_id}", response_model=RunRead)
+async def update_run_endpoint(
+    run_id: UUID,
+    payload: RunUpdate,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> RunRead:
+    try:
+        run = await update_run(session, user_id, run_id, payload)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    return RunRead.model_validate(run)
+
+
+@router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_run_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> None:
+    try:
+        await delete_run(session, user_id, run_id)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e

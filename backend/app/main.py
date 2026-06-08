@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.api import api_router
 from app.core.config import get_settings
 from app.db.session import engine
 
@@ -36,3 +37,5 @@ async def health_db() -> dict[str, str]:
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
     return {"status": "ok", "db": "reachable"}
+
+app.include_router(api_router)
