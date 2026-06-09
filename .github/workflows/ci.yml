@@ -15,6 +15,7 @@ jobs:
           POSTGRES_USER: stridesense
           POSTGRES_PASSWORD: changeme_in_dev
           POSTGRES_DB: stridesense
+          DEV_USER_ID: "00000000-0000-0000-0000-000000000001"
         ports:
           - 5432:5432
         options: >-
