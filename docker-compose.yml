@@ -32,6 +32,7 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
+      DEV_USER_ID: ${DEV_USER_ID}
     ports:
       - "8000:8000"
     volumes:
