@@ -33,6 +33,25 @@ async def client(session):
         yield ac
     app.dependency_overrides.clear()
 
+@pytest_asyncio.fixture(autouse=True)
+async def ensure_dev_user(session):
+    """Make sure the dev user exists before each test (idempotent)."""
+    from sqlalchemy import select
+
+    from app.core.config import get_settings
+    from app.models import User
+
+    settings = get_settings()
+    existing = await session.execute(select(User).where(User.id == settings.dev_user_id))
+    if existing.scalar_one_or_none() is None:
+        session.add(
+            User(
+                id=settings.dev_user_id,
+                email="dev@stridesense.local",
+                source_priority={},
+            )
+        )
+        await session.commit()
 
 def _valid_payload() -> dict:
     return {
