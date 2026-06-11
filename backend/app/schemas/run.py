@@ -60,5 +60,26 @@ class RunRead(RunBase):
     source: DataSource
     run_type_source: RunTypeSource
     avg_pace_seconds_per_km: float | None
+
+    # Weather summary
+    weather_temp_start_c: float | None = None
+    weather_temp_end_c: float | None = None
+    weather_temp_max_c: float | None = None
+    weather_temp_min_c: float | None = None
+    weather_apparent_temp_max_c: float | None = None
+    weather_humidity_avg: float | None = None
+    weather_wind_speed_avg_kmh: float | None = None
+    weather_precipitation_total_mm: float | None = None
+
+    # Glucose summary
+    glucose_pre_run_60min_avg_mg_dl: float | None = None
+    glucose_at_start_mg_dl: float | None = None
+    glucose_at_end_mg_dl: float | None = None
+    glucose_avg_during_run_mg_dl: float | None = None
+    glucose_min_during_run_mg_dl: float | None = None
+    glucose_max_during_run_mg_dl: float | None = None
+    glucose_post_run_60min_avg_mg_dl: float | None = None
+    glucose_time_in_range_pct_during_run: float | None = None
+
     created_at: datetime
     updated_at: datetime
