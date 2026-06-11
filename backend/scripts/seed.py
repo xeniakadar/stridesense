@@ -2,9 +2,9 @@
 
 import asyncio
 import random
-from datetime import date, datetime, time, timedelta, timezone
-from statistics import mean
 import uuid
+from datetime import UTC, date, datetime, time, timedelta
+from statistics import mean
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -49,12 +49,36 @@ BASELINE_GLUCOSE_STD = 6.0
 #  during_change: net change from start of run to end of run
 #  post_change: residual offset 60 min after the run ends
 GLUCOSE_RESPONSE_BY_RUN_TYPE: dict[RunType, dict[str, tuple[float, float]]] = {
-    RunType.EASY:     {"pre_offset": (-5, 15),  "during_change": (-5, 10),   "post_change": (-5, 5)},
-    RunType.LONG:    {"pre_offset": (-5, 25),  "during_change": (-30, 5),   "post_change": (-15, 10)},
-    RunType.RECOVERY: {"pre_offset": (-5, 5),   "during_change": (-3, 5),    "post_change": (-3, 5)},
-    RunType.TEMPO:    {"pre_offset": (-5, 15),  "during_change": (5, 30),    "post_change": (-10, 10)},
-    RunType.INTERVAL: {"pre_offset": ( 0, 15),  "during_change": (15, 45),   "post_change": (-15, 5)},
-    RunType.RACE:     {"pre_offset": (10, 40),  "during_change": (-20, 25),  "post_change": (-25, 10)},
+    RunType.EASY: {
+        "pre_offset": (-5, 15),
+        "during_change": (-5, 10),
+        "post_change": (-5, 5),
+    },
+    RunType.LONG: {
+        "pre_offset": (-5, 25),
+        "during_change": (-30, 5),
+        "post_change": (-15, 10),
+    },
+    RunType.RECOVERY: {
+        "pre_offset": (-5, 5),
+        "during_change": (-3, 5),
+        "post_change": (-3, 5),
+    },
+    RunType.TEMPO: {
+        "pre_offset": (-5, 15),
+        "during_change": (5, 30),
+        "post_change": (-10, 10),
+    },
+    RunType.INTERVAL: {
+        "pre_offset": (0, 15),
+        "during_change": (15, 45),
+        "post_change": (-15, 5),
+    },
+    RunType.RACE: {
+        "pre_offset": (10, 40),
+        "during_change": (-20, 25),
+        "post_change": (-25, 10),
+    },
 }
 
 # 30-min sampling, matching the planned Linx-via-Apple-Health ingestion granularity
@@ -70,7 +94,7 @@ def _random_start_time_for_date(d: date) -> datetime:
     """Most runs are early morning, some are after work."""
     hour = random.choices([6, 7, 8, 17, 18, 19], weights=[3, 4, 2, 1, 2, 1])[0]
     minute = random.randint(0, 59)
-    return datetime.combine(d, time(hour, minute), tzinfo=timezone.utc)
+    return datetime.combine(d, time(hour, minute), tzinfo=UTC)
 
 
 def _generate_run_metrics(run_type: RunType) -> dict:
