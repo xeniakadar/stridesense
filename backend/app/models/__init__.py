@@ -1,3 +1,4 @@
+from app.models.glucose import GlucoseDailyRecord, RunGlucoseSample
 from app.models.import_job import ImportJob
 from app.models.oauth import OAuthConnection
 from app.models.recovery import CycleRecord, SleepRecord
@@ -12,6 +13,8 @@ __all__ = [
     "CycleRecord",
     "WeatherObservation",
     "RunWeatherSample",
+    "GlucoseDailyRecord",
+    "RunGlucoseSample",
     "OAuthConnection",
     "ImportJob",
 ]
