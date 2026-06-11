@@ -4,6 +4,7 @@ import asyncio
 import random
 from datetime import date, datetime, time, timedelta, timezone
 from statistics import mean
+import uuid
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -238,6 +239,7 @@ async def seed() -> None:
             run_type = _pick_run_type()
             metrics = _generate_run_metrics(run_type)
             run = Run(
+                id=uuid.uuid4(),  # explicit, so we can reference it below
                 user_id=dev_user_id,
                 date=run_date,
                 started_at=_random_start_time_for_date(run_date),
@@ -254,6 +256,7 @@ async def seed() -> None:
             all_samples.extend(samples)
 
         session.add_all(all_runs)
+        await session.flush()
         session.add_all(all_samples)
         session.add_all(all_daily_records)
         await session.commit()
