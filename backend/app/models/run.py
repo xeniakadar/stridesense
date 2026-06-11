@@ -35,7 +35,7 @@ class Run(Base):
     date: Mapped[date_type] = mapped_column(nullable=False)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
-    # Source tracking — the heart of the source-aware design
+    # Source tracking
     source: Mapped[DataSource] = mapped_column(
         Enum(DataSource, name="data_source"), nullable=False, default=DataSource.MANUAL
     )
@@ -66,18 +66,16 @@ class Run(Base):
     perceived_effort: Mapped[int | None] = mapped_column(Integer)
     notes: Mapped[str | None] = mapped_column(Text)
 
-    # From source (Strava titles, descriptions, etc.)
+    # From source
     raw_title: Mapped[str | None] = mapped_column(String(500))
     raw_description: Mapped[str | None] = mapped_column(Text)
     extracted_tags: Mapped[list | None] = mapped_column(JSONB)
 
-    # Location — used for weather matching
+    # Location
     start_lat: Mapped[float | None] = mapped_column(Float)
     start_lng: Mapped[float | None] = mapped_column(Float)
 
-    # Denormalized weather summary — computed once when weather samples are ingested.
-    # Used by similarity engine, fatigue scoring, and analytics queries for speed.
-    # Detailed per-sample data lives in run_weather_samples.
+    # Denormalized weather summary
     weather_temp_start_c: Mapped[float | None] = mapped_column(Float)
     weather_temp_end_c: Mapped[float | None] = mapped_column(Float)
     weather_temp_max_c: Mapped[float | None] = mapped_column(Float)
@@ -87,9 +85,15 @@ class Run(Base):
     weather_wind_speed_avg_kmh: Mapped[float | None] = mapped_column(Float)
     weather_precipitation_total_mm: Mapped[float | None] = mapped_column(Float)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
+    # Denormalized glucose summary
+    glucose_pre_run_60min_avg_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_at_start_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_at_end_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_avg_during_run_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_min_during_run_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_max_during_run_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_post_run_60min_avg_mg_dl: Mapped[float | None] = mapped_column(Float)
+    glucose_time_in_range_pct_during_run: Mapped[float | None] = mapped_column(Float)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -102,10 +106,7 @@ class Run(Base):
     )
 
     __table_args__ = (
-        # Dedup: same external run can't be imported twice
         UniqueConstraint("user_id", "source", "external_id", name="uq_runs_source_external"),
-        # Hot path: user's runs in reverse chronological order
         Index("ix_runs_user_date", "user_id", "date"),
-        # For similarity matching by run type
         Index("ix_runs_user_type_date", "user_id", "run_type", "date"),
     )
