@@ -40,7 +40,8 @@ const FormSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-type FormValues = z.infer<typeof FormSchema>;
+type FormInput = z.input<typeof FormSchema>;
+type FormOutput = z.output<typeof FormSchema>;
 
 export default function NewRunPage() {
   const router = useRouter();
@@ -50,18 +51,19 @@ export default function NewRunPage() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
+  } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
       date: new Date().toISOString().slice(0, 10),
       run_type: "easy",
-      duration_hours: 0,
-      duration_minutes: 30,
-      duration_seconds: 0,
+      distance_km: "" as unknown as number,
+      duration_hours: "" as unknown as number,
+      duration_minutes: 30 as unknown as number,
+      duration_seconds: "" as unknown as number,
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: FormOutput) => {
     setSubmitError(null);
     const duration_seconds =
       values.duration_hours * 3600 +
