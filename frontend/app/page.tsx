@@ -2,60 +2,93 @@
 
 import { useEffect, useState } from "react";
 
-type HealthResponse = { status: string; db?: string };
+import { PaceTrendChart } from "@/components/charts/PaceTrendChart";
+import { RunTypeDistributionChart } from "@/components/charts/RunTypeDistributionChart";
+import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
+import { api } from "@/lib/api";
+import type {
+  PaceTrendPoint,
+  RunTypeDistributionItem,
+  WeeklyMileagePoint,
+} from "@/lib/types";
 
-export default function Home() {
-  const [apiHealth, setApiHealth] = useState<HealthResponse | null>(null);
-  const [dbHealth, setDbHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+export default function DashboardPage() {
+  const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
+  const [pace, setPace] = useState<PaceTrendPoint[] | null>(null);
+  const [distribution, setDistribution] = useState<
+    RunTypeDistributionItem[] | null
+  >(null);
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-
-    fetch(`${apiUrl}/health`)
-      .then((r) => r.json())
-      .then(setApiHealth)
-      .catch((e) => setError(String(e)));
-
-    fetch(`${apiUrl}/health/db`)
-      .then((r) => r.json())
-      .then(setDbHealth)
-      .catch(() => {});
+    api
+      .weeklyMileage()
+      .then(setMileage)
+      .catch(() => setMileage([]));
+    api
+      .paceTrend()
+      .then(setPace)
+      .catch(() => setPace([]));
+    api
+      .runTypeDistribution()
+      .then(setDistribution)
+      .catch(() => setDistribution([]));
   }, []);
 
   return (
-    <main className="min-h-screen p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-medium mb-2">StrideSense</h1>
-      <p className="text-gray-600 mb-8">Phase 0 — scaffolding check</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-medium">Dashboard</h1>
 
-      <div className="space-y-4">
-        <HealthRow label="Frontend → Backend" data={apiHealth} />
-        <HealthRow label="Backend → Postgres" data={dbHealth} />
+      <ChartCard
+        title="Weekly mileage"
+        subtitle="Total km per week, last 12 weeks"
+      >
+        {mileage ? <WeeklyMileageChart data={mileage} /> : <Loading />}
+      </ChartCard>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ChartCard
+          title="Easy-run pace trend"
+          subtitle="Average pace on easy runs, last 90 days"
+        >
+          {pace ? <PaceTrendChart data={pace} /> : <Loading />}
+        </ChartCard>
+
+        <ChartCard title="Run type distribution" subtitle="Last 30 days">
+          {distribution ? (
+            <RunTypeDistributionChart data={distribution} />
+          ) : (
+            <Loading />
+          )}
+        </ChartCard>
       </div>
-
-      {error && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded text-sm text-red-900">
-          {error}
-        </div>
-      )}
-    </main>
+    </div>
   );
 }
 
-function HealthRow({
-  label,
-  data,
+function ChartCard({
+  title,
+  subtitle,
+  children,
 }: {
-  label: string;
-  data: HealthResponse | null;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
 }) {
-  const ok = data?.status === "ok";
   return (
-    <div className="flex items-center justify-between p-4 border rounded">
-      <span>{label}</span>
-      <span className={ok ? "text-green-600" : "text-gray-400"}>
-        {ok ? "✓ ok" : "…"}
-      </span>
+    <div className="bg-white border border-gray-200 rounded p-5">
+      <div className="mb-4">
+        <h2 className="text-base font-medium">{title}</h2>
+        <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div className="h-[240px] flex items-center justify-center text-sm text-gray-400">
+      Loading…
     </div>
   );
 }
