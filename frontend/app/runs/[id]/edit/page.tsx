@@ -37,7 +37,8 @@ const FormSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-type FormValues = z.infer<typeof FormSchema>;
+type FormInput = z.input<typeof FormSchema>;
+type FormOutput = z.output<typeof FormSchema>;
 
 export default function EditRunPage({
   params,
@@ -50,7 +51,9 @@ export default function EditRunPage({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const form = useForm<FormValues>({ resolver: zodResolver(FormSchema) });
+  const form = useForm<FormInput, unknown, FormOutput>({
+    resolver: zodResolver(FormSchema),
+  });
   const {
     register,
     handleSubmit,
@@ -79,7 +82,7 @@ export default function EditRunPage({
       .catch((e: ApiError) => setLoadError(e.message));
   }, [id, reset]);
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: FormOutput) => {
     setSubmitError(null);
     const duration_seconds =
       values.duration_hours * 3600 +
