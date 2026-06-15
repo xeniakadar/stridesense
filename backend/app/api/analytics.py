@@ -37,7 +37,13 @@ async def weekly_mileage(
     current_monday = today - timedelta(days=today.weekday())
     for i in range(11, -1, -1):
         week_start = current_monday - timedelta(weeks=i)
-        output.append({"week_start": week_start.isoformat(), "distance_km": round(by_week.get(week_start, 0.0), 2)})
+        output.append(
+            {
+                "week_start": week_start.isoformat(),
+                "distance_km": round(by_week.get(week_start, 0.0), 2),
+            }
+        )
+
 
     return output
 
@@ -82,7 +88,9 @@ async def run_type_distribution(
     )
     runs = result.scalars().all()
 
-    grouped: dict[str, dict[str, float]] = defaultdict(lambda: {"count": 0, "total_distance_km": 0.0})
+    grouped: dict[str, dict[str, float]] = defaultdict(
+        lambda: {"count": 0, "total_distance_km": 0.0}
+    )
     for r in runs:
         grouped[r.run_type]["count"] += 1
         grouped[r.run_type]["total_distance_km"] += r.distance_km
