@@ -47,7 +47,7 @@ export function PaceTrendChart({ data }: { data: PaceTrendPoint[] }) {
         />
         <Tooltip
           labelFormatter={(label) => formatDateShort(label as string)}
-          formatter={(value: number) => [formatPace(value), "Pace"]}
+          formatter={(value) => [formatPace(Number(value)), "Pace"]}
         />
         <Line
           type="monotone"

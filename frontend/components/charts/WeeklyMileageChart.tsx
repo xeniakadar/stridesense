@@ -37,7 +37,7 @@ export function WeeklyMileageChart({ data }: { data: WeeklyMileagePoint[] }) {
         />
         <Tooltip
           labelFormatter={(label) => formatDateShort(label as string)}
-          formatter={(value: number) => [`${value.toFixed(1)} km`, "Distance"]}
+          formatter={(value) => [`${Number(value).toFixed(1)} km`, "Distance"]}
         />
         <Bar dataKey="distance_km" fill="#111827" radius={[4, 4, 0, 0]} />
       </BarChart>

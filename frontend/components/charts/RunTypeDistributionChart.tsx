@@ -54,9 +54,12 @@ export function RunTypeDistributionChart({
           width={80}
         />
         <Tooltip
-          formatter={(value: number, _key, props) => {
-            const dist = props.payload.total_distance_km;
-            return [`${value} runs · ${dist.toFixed(1)} km`, "Total"];
+          formatter={(value, _key, props) => {
+            const count = Number(value);
+            const dist =
+              (props.payload as RunTypeDistributionItem)?.total_distance_km ??
+              0;
+            return [`${count} runs · ${dist.toFixed(1)} km`, "Total"];
           }}
         />
         <Bar dataKey="count" fill="#111827" radius={[0, 4, 4, 0]} />
