@@ -5,6 +5,7 @@ import random
 import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
+import math
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -214,6 +215,61 @@ def _generate_daily_glucose_record(
     )
 
 
+# Budapest-ish seasonal temperature curve
+# Coldest ~early Jan, warmest ~mid Jul. Mean annual ~11C, swing ~+/-11C.
+SEASONAL_MEAN_C = 11.0
+SEASONAL_SWING_C = 11.0
+
+
+def _seasonal_baseline_temp(run_date: date) -> float:
+    """Approximate average temperature for the date, by day-of-year."""
+    day_of_year = run_date.timetuple().tm_yday
+    # peak heat around day 196 (mid-July); shift the cosine so day 196 = max
+    phase = (day_of_year - 196) / 365 * 2 * math.pi
+    return SEASONAL_MEAN_C + SEASONAL_SWING_C * math.cos(phase)
+
+
+def _generate_weather(run: Run) -> dict:
+    """Plausible, internally-consistent weather summary for a run."""
+    baseline = _seasonal_baseline_temp(run.date)
+
+    # Time-of-day effect: morning runs cooler than the day's max
+    hour = run.started_at.hour if run.started_at else 8
+    is_morning = hour < 11
+    day_swing = random.uniform(4, 9)  # diurnal range
+
+    temp_min = baseline - day_swing / 2 + random.uniform(-2, 2)
+    temp_max = baseline + day_swing / 2 + random.uniform(-2, 2)
+
+    # Start/end fall between min and max depending on time of day
+    if is_morning:
+        temp_start = temp_min + random.uniform(0, 2)
+        temp_end = temp_start + random.uniform(1, 4)
+    else:
+        temp_start = temp_max - random.uniform(0, 3)
+        temp_end = temp_start - random.uniform(0, 3)
+
+    humidity = max(30.0, min(95.0, random.gauss(68, 14)))
+    wind = max(0.0, random.gauss(11, 6))
+
+    # Precipitation: usually dry, occasionally wet (more likely in cooler months)
+    wet_chance = 0.18 if baseline < 12 else 0.10
+    precip = round(random.uniform(0.5, 12.0), 1) if random.random() < wet_chance else 0.0
+
+    # Apparent ("feels like") max: humidity and wind push it around real temp
+    apparent_max = temp_max + (humidity - 60) * 0.05 - wind * 0.1
+
+    return {
+        "weather_temp_start_c": round(temp_start, 1),
+        "weather_temp_end_c": round(temp_end, 1),
+        "weather_temp_max_c": round(temp_max, 1),
+        "weather_temp_min_c": round(temp_min, 1),
+        "weather_apparent_temp_max_c": round(apparent_max, 1),
+        "weather_humidity_avg": round(humidity, 1),
+        "weather_wind_speed_avg_kmh": round(wind, 1),
+        "weather_precipitation_total_mm": precip,
+    }
+
 async def seed() -> None:
     settings = get_settings()
     dev_user_id: UUID = settings.dev_user_id
@@ -274,6 +330,9 @@ async def seed() -> None:
 
             samples, glucose_summary = _generate_glucose_for_run(run, day_baseline)
             for field, value in glucose_summary.items():
+                setattr(run, field, value)
+
+            for field, value in _generate_weather(run).items():
                 setattr(run, field, value)
 
             all_runs.append(run)
