@@ -1,11 +1,11 @@
 """Seed the database with a dev user, ~6 months of runs, and glucose data."""
 
 import asyncio
+import math
 import random
 import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
-import math
 from uuid import UUID
 
 from sqlalchemy import delete, select
