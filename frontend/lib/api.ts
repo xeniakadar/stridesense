@@ -5,6 +5,8 @@ import type {
   WeeklyMileagePoint,
   PaceTrendPoint,
   RunTypeDistributionItem,
+  LoadPoint,
+  SimilarRun,
 } from "@/lib/types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -53,7 +55,13 @@ export const api = {
   // Analytics
   weeklyMileage: () =>
     request<WeeklyMileagePoint[]>("/analytics/weekly-mileage"),
+
   paceTrend: () => request<PaceTrendPoint[]>("/analytics/pace-trend"),
+
   runTypeDistribution: () =>
     request<RunTypeDistributionItem[]>("/analytics/run-type-distribution"),
+
+  getSimilarRuns: (id: string) => request<SimilarRun[]>(`/runs/${id}/similar`),
+
+  getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
 };

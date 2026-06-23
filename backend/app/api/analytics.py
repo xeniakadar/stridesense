@@ -8,6 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
 from app.models import Run
+from app.schemas.analytics import LoadPointRead
+from app.services import list_runs
+from app.services.training_load import compute_load_series
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -103,3 +106,13 @@ async def run_type_distribution(
         }
         for run_type, data in sorted(grouped.items(), key=lambda x: -x[1]["count"])
     ]
+
+
+@router.get("/training-load", response_model=list[LoadPointRead])
+async def training_load_endpoint(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[LoadPointRead]:
+    runs = await list_runs(session, user_id, limit=1000)
+    series = compute_load_series(runs)
+    return [LoadPointRead(**vars(p)) for p in series]

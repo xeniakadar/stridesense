@@ -100,3 +100,20 @@ export interface RunTypeDistributionItem {
   count: number;
   total_distance_km: number;
 }
+
+export interface SimilarRun {
+  run_id: string;
+  date: string;
+  run_type: RunType;
+  distance_km: number;
+  avg_pace_seconds_per_km: number | null;
+  score: number;
+}
+
+export interface LoadPoint {
+  date: string;
+  acute_load: number;
+  chronic_load: number;
+  acwr: number | null;
+  zone: "detraining" | "optimal" | "caution" | "danger" | "building";
+}

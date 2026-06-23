@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
+from app.schemas.analytics import SimilarRunRead
 from app.schemas.run import RunCreate, RunRead, RunUpdate
 from app.services import (
     RunNotFoundError,
@@ -13,6 +14,7 @@ from app.services import (
     list_runs,
     update_run,
 )
+from app.services.similarity import find_similar_runs
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -48,6 +50,28 @@ async def get_run_endpoint(
         raise HTTPException(status_code=404, detail=str(e)) from e
     return RunRead.model_validate(run)
 
+
+@router.get("/{run_id}/similar", response_model=list[SimilarRunRead])
+async def get_similar_runs_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+    limit: int = 5,
+) -> list[SimilarRunRead]:
+    target = await get_run(session, user_id, run_id)
+    candidates = await list_runs(session, user_id, limit=500)
+    similar = find_similar_runs(target, candidates, limit=limit)
+    return [
+        SimilarRunRead(
+            run_id=s.run.id,
+            date=s.run.date,
+            run_type=s.run.run_type,
+            distance_km=s.run.distance_km,
+            avg_pace_seconds_per_km=s.run.avg_pace_seconds_per_km,
+            score=round(s.score, 3),
+        )
+        for s in similar
+    ]
 
 @router.put("/{run_id}", response_model=RunRead)
 async def update_run_endpoint(
