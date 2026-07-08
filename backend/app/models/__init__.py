@@ -5,6 +5,7 @@ from app.models.recovery import CycleRecord, SleepRecord
 from app.models.run import Run
 from app.models.user import User
 from app.models.weather import RunWeatherSample, WeatherObservation
+from app.models.insight import Insight
 
 __all__ = [
     "User",
@@ -17,4 +18,5 @@ __all__ = [
     "RunGlucoseSample",
     "OAuthConnection",
     "ImportJob",
+    "Insight"
 ]
