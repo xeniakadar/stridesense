@@ -33,6 +33,7 @@ services:
       REDIS_URL: ${REDIS_URL}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
       DEV_USER_ID: ${DEV_USER_ID}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     ports:
       - "8000:8000"
     volumes:

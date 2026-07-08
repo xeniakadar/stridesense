@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     redis_url: str
     backend_cors_origins: str = "http://localhost:3000"
     dev_user_id: UUID
+    anthropic_api_key: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
