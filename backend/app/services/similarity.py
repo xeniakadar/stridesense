@@ -87,9 +87,21 @@ def find_similar_runs(
     target: Run,
     candidates: list[Run],
     limit: int = 5,
+    min_pool: int = 8,
 ) -> list[SimilarRun]:
-    """Rank candidates by similarity to target. Excludes the target itself."""
-    pool = [r for r in candidates if r.id != target.id]
+    """Rank candidates by similarity to target.
+
+    Prefers runs of the same type; falls back to all runs when fewer than
+    `min_pool` same-type candidates exist (rare run types like races).
+    Excludes the target itself."""
+    same_type = [
+        r for r in candidates if r.run_type == target.run_type and r.id != target.id
+    ]
+    if len(same_type) >= min_pool:
+        pool = same_type
+    else:
+        pool = [r for r in candidates if r.id != target.id]
+
     if not pool:
         return []
 
