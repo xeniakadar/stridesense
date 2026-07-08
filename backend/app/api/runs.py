@@ -1,10 +1,12 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
-from app.schemas.analytics import SimilarRunRead
+from app.models import Insight
+from app.schemas.analytics import InsightRead, SimilarRunRead
 from app.schemas.run import RunCreate, RunRead, RunUpdate
 from app.services import (
     RunNotFoundError,
@@ -14,7 +16,13 @@ from app.services import (
     list_runs,
     update_run,
 )
+from app.services.insights import (
+    INSIGHT_MODEL,
+    InsightUnavailableError,
+    generate_insight,
+)
 from app.services.similarity import find_similar_runs
+from app.services.training_load import acwr_for_run
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -97,3 +105,40 @@ async def delete_run_endpoint(
         await delete_run(session, user_id, run_id)
     except RunNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
+
+@router.get("/{run_id}/insight", response_model=InsightRead)
+async def get_insight_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> InsightRead:
+    try:
+        run = await get_run(session, user_id, run_id)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    existing = await session.execute(
+        select(Insight)
+        .where(Insight.run_id == run_id)
+        .order_by(Insight.created_at.desc())
+    )
+    cached = existing.scalars().first()
+    if cached:
+        return InsightRead.model_validate(cached)
+
+    candidates = await list_runs(session, user_id, limit=500)
+    similar = find_similar_runs(run, candidates, limit=5)
+    load = acwr_for_run(run, candidates)
+
+    try:
+        content = await generate_insight(run, similar, load)
+    except InsightUnavailableError as e:
+        raise HTTPException(
+            status_code=503, detail="Insight temporarily unavailable"
+        ) from e
+
+    insight = Insight(run_id=run_id, content=content, model=INSIGHT_MODEL)
+    session.add(insight)
+    await session.commit()
+    await session.refresh(insight)
+    return InsightRead.model_validate(insight)
