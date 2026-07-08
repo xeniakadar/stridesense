@@ -1,5 +1,4 @@
 from datetime import date as date_type
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -24,12 +23,3 @@ class LoadPointRead(BaseModel):
     chronic_load: float
     acwr: float | None
     zone: str
-
-class InsightRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: UUID
-    run_id: UUID
-    content: str
-    model: str
-    created_at: datetime
