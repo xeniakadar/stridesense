@@ -64,4 +64,13 @@ export const api = {
   getSimilarRuns: (id: string) => request<SimilarRun[]>(`/runs/${id}/similar`),
 
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
+
+  getInsight: (id: string) =>
+    request<{
+      id: string;
+      run_id: string;
+      content: string;
+      model: string;
+      created_at: string;
+    }>(`/runs/${id}/insight`),
 };
