@@ -13,7 +13,7 @@ import {
   formatPace,
   formatTimeInRange,
 } from "@/lib/format";
-import type { Run } from "@/lib/types";
+import type { Run, SimilarRun } from "@/lib/types";
 
 export default function RunDetailPage() {
   const params = useParams<{ id: string }>();
@@ -80,6 +80,7 @@ export default function RunDetailPage() {
       </div>
       <InsightSection runId={run.id} />
       <Section title="Summary">
+        <SimilarRunsSection runId={run.id} />
         <StatGrid>
           <Stat label="Distance" value={formatDistance(run.distance_km)} />
           <Stat label="Duration" value={formatDuration(run.duration_seconds)} />
@@ -262,6 +263,44 @@ function InsightSection({ runId }: { runId: string }) {
       {insight && (
         <p className="text-base text-gray-800 leading-relaxed">{insight}</p>
       )}
+    </section>
+  );
+}
+
+function SimilarRunsSection({ runId }: { runId: string }) {
+  const [runs, setRuns] = useState<SimilarRun[]>([]);
+  useEffect(() => {
+    api
+      .getSimilarRuns(runId)
+      .then(setRuns)
+      .catch(() => setRuns([]));
+  }, [runId]);
+
+  if (runs.length === 0) return null;
+
+  return (
+    <section>
+      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500 mb-3">
+        Comparable runs
+      </h2>
+      <ul className="space-y-2">
+        {runs.map((r) => (
+          <li key={r.run_id}>
+            <Link
+              href={`/runs/${r.run_id}`}
+              className="flex justify-between text-sm hover:bg-gray-50 px-2 py-1.5 rounded"
+            >
+              <span className="capitalize">
+                {formatDate(r.date)} · {r.run_type} ·{" "}
+                {formatDistance(r.distance_km)}
+              </span>
+              <span className="text-gray-400">
+                {Math.round(r.score * 100)}% match
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
