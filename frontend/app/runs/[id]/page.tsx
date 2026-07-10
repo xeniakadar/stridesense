@@ -78,7 +78,7 @@ export default function RunDetailPage() {
           </button>
         </div>
       </div>
-
+      <InsightSection runId={run.id} />
       <Section title="Summary">
         <StatGrid>
           <Stat label="Distance" value={formatDistance(run.distance_km)} />
@@ -233,5 +233,35 @@ function Stat({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-base text-gray-900">{value}</p>
     </div>
+  );
+}
+
+function InsightSection({ runId }: { runId: string }) {
+  const [insight, setInsight] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    api
+      .getInsight(runId)
+      .then((res) => setInsight(res.content))
+      .catch((e) =>
+        setError(e instanceof ApiError ? e.message : "Could not load insight.")
+      )
+      .finally(() => setLoading(false));
+  }, [runId]);
+
+  return (
+    <section>
+      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500 mb-3">
+        Insight
+      </h2>
+      {loading && <p className="text-sm text-gray-400">Analyzing this run…</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {insight && (
+        <p className="text-base text-gray-800 leading-relaxed">{insight}</p>
+      )}
+    </section>
   );
 }
