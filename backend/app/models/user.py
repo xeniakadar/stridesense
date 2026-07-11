@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, String, func
+from sqlalchemy import JSON, DateTime, Float, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -16,7 +16,8 @@ class User(Base):
     )
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String(100))
-
+    home_lat: Mapped[float | None] = mapped_column(Float)
+    home_lng: Mapped[float | None] = mapped_column(Float)
     # Source priority config per metric type.
     # Example: {"sleep": ["oura", "apple_health", "manual"], "runs": ["strava", "manual"]}
     source_priority: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
