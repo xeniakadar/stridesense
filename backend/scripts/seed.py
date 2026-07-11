@@ -3,8 +3,8 @@
 import asyncio
 import math
 import random
-import uuid
 import sys
+import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
 from uuid import UUID
