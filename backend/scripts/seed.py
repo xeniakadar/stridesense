@@ -3,6 +3,7 @@
 import asyncio
 import math
 import random
+import sys
 import uuid
 from datetime import UTC, date, datetime, time, timedelta
 from statistics import mean
@@ -275,6 +276,19 @@ async def seed() -> None:
     dev_user_id: UUID = settings.dev_user_id
 
     async with AsyncSessionLocal() as session:
+        # Guard: refuse to wipe real imported data
+        imported = await session.execute(
+            select(Run).where(
+                Run.user_id == dev_user_id,
+                Run.source != DataSource.MANUAL,
+            ).limit(1)
+        )
+        if imported.scalar_one_or_none() is not None and "--force" not in sys.argv:
+            print(
+                "Refusing to reseed: imported (non-manual) runs exist.\n"
+                "Re-run with --force to wipe ALL data including imports."
+            )
+            return
         # Ensure dev user exists
         existing = await session.execute(select(User).where(User.id == dev_user_id))
         user = existing.scalar_one_or_none()
