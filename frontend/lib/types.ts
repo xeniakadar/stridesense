@@ -17,7 +17,8 @@ export type DataSource =
   | "fit_upload"
   | "linx_cgm"
   | "dexcom"
-  | "libre";
+  | "libre"
+  | "open_meteo";
 
 export type RunTypeSource = "user" | "extracted" | "default";
 

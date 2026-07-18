@@ -9,6 +9,10 @@ class DataSource(StrEnum):
     GARMIN = "garmin"
     CSV = "csv"
     FIT_UPLOAD = "fit_upload"
+    LINX_CGM = "linx_cgm"
+    DEXCOM = "dexcom"
+    LIBRE = "libre"
+    OPEN_METEO = "open_meteo"
 
 
 class RunType(StrEnum):
