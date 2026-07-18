@@ -7,27 +7,51 @@ from uuid import UUID
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ImportJob, Run
+from app.db.base import Base
+from app.models import ImportJob, Run, SleepRecord
 from app.models.enums import DataSource, ImportJobStatus, ImportJobType
 
 
-async def upsert_run(session: AsyncSession, values: dict[str, Any]) -> None:
-    """Insert a run, or update it if (user_id, source, external_id) exists.
+async def _upsert_on_constraint(
+    session: AsyncSession,
+    model: type[Base],
+    values: dict[str, Any],
+    constraint: str,
+    conflict_keys: tuple[str, ...],
+) -> None:
+    """Insert a row, or refresh every non-key column on conflict.
 
-    Idempotent by design: re-importing the same activity refreshes its data
+    Idempotent by design: re-importing the same record refreshes its data
     instead of crashing or duplicating.
     """
-    stmt = pg_insert(Run).values(**values)
+    stmt = pg_insert(model).values(**values)
     update_cols = {
-        k: stmt.excluded[k]
-        for k in values
-        if k not in ("id", "user_id", "source", "external_id")
+        k: stmt.excluded[k] for k in values if k not in ("id", *conflict_keys)
     }
-    stmt = stmt.on_conflict_do_update(
-        constraint="uq_runs_source_external",
-        set_=update_cols,
-    )
+    stmt = stmt.on_conflict_do_update(constraint=constraint, set_=update_cols)
     await session.execute(stmt)
+
+
+async def upsert_run(session: AsyncSession, values: dict[str, Any]) -> None:
+    """Insert a run, or update it if (user_id, source, external_id) exists."""
+    await _upsert_on_constraint(
+        session,
+        Run,
+        values,
+        constraint="uq_runs_source_external",
+        conflict_keys=("user_id", "source", "external_id"),
+    )
+
+
+async def upsert_sleep_record(session: AsyncSession, values: dict[str, Any]) -> None:
+    """Insert a sleep record, or update it if (user_id, source, date) exists."""
+    await _upsert_on_constraint(
+        session,
+        SleepRecord,
+        values,
+        constraint="uq_sleep_user_source_date",
+        conflict_keys=("user_id", "source", "date"),
+    )
 
 
 async def start_job(

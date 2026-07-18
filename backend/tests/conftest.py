@@ -6,8 +6,18 @@ from sqlalchemy.pool import NullPool
 
 from app.api.deps import get_session
 from app.core.config import get_settings
+from app.db.session import engine as app_engine
 from app.main import app
 from app.models import User
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _dispose_app_engine():
+    # Background tasks use the app's global engine; its pooled connections
+    # are bound to this test's event loop and must not leak into the next
+    # test's loop.
+    yield
+    await app_engine.dispose()
 
 
 @pytest_asyncio.fixture

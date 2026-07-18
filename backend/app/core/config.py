@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     backend_cors_origins: str = "http://localhost:3000"
     dev_user_id: UUID
     anthropic_api_key: str = ""
+    oura_pat: str = ""
 
     @property
     def cors_origins_list(self) -> list[str]:
