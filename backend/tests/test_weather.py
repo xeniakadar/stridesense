@@ -1,13 +1,11 @@
 from datetime import UTC, date, datetime
 
-import pytest_asyncio
 import respx
 from httpx import AsyncClient, Response
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.db.session import engine
 from app.models import ImportJob, Run, RunWeatherSample
 from app.models.enums import DataSource, RunType, RunTypeSource
 from app.services.weather import ARCHIVE_URL
@@ -23,15 +21,6 @@ OPEN_METEO_PAYLOAD = {
         "precipitation": [0.1] * 24,
     },
 }
-
-
-@pytest_asyncio.fixture(autouse=True)
-async def _dispose_app_engine():
-    # The backfill background task uses the app's global engine; its pooled
-    # connections are bound to this test's event loop and must not leak into
-    # the next test's loop.
-    yield
-    await engine.dispose()
 
 
 def _make_run(**overrides) -> Run:
