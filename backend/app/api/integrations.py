@@ -1,8 +1,10 @@
+import tempfile
 from datetime import date, timedelta
+from pathlib import Path
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +14,7 @@ from app.core.config import get_settings
 from app.models import ImportJob
 from app.models.enums import DataSource, ImportJobType
 from app.schemas.integrations import ImportJobRead
+from app.services.apple_health import import_apple_health
 from app.services.ingest import start_job
 from app.services.oura import (
     build_authorize_url,
@@ -34,6 +37,25 @@ async def weather_backfill_endpoint(
         session, user_id, DataSource.OPEN_METEO, ImportJobType.INCREMENTAL_SYNC
     )
     background_tasks.add_task(backfill_weather, job.id)
+    return {"job_id": str(job.id)}
+
+
+@router.post("/apple-health/upload", status_code=status.HTTP_202_ACCEPTED)
+async def apple_health_upload_endpoint(
+    background_tasks: BackgroundTasks,
+    file: UploadFile,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> dict[str, str]:
+    # Chunked copy to disk — exports run to hundreds of MB, never read whole
+    dest = Path(tempfile.mkdtemp()) / "export.zip"
+    with dest.open("wb") as out:
+        while chunk := await file.read(1024 * 1024):
+            out.write(chunk)
+    job = await start_job(
+        session, user_id, DataSource.APPLE_HEALTH, ImportJobType.FILE_UPLOAD
+    )
+    background_tasks.add_task(import_apple_health, job.id, dest)
     return {"job_id": str(job.id)}
 
 

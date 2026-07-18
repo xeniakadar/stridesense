@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.base import Base
-from app.models import ImportJob, Run, SleepRecord
+from app.models import GlucoseDailyRecord, ImportJob, Run, RunGlucoseSample, SleepRecord
 from app.models.enums import DataSource, ImportJobStatus, ImportJobType
 
 
@@ -50,6 +50,28 @@ async def upsert_sleep_record(session: AsyncSession, values: dict[str, Any]) -> 
         SleepRecord,
         values,
         constraint="uq_sleep_user_source_date",
+        conflict_keys=("user_id", "source", "date"),
+    )
+
+
+async def upsert_glucose_sample(session: AsyncSession, values: dict[str, Any]) -> None:
+    """Insert a run glucose sample, or update it if (run_id, elapsed_seconds, source) exists."""
+    await _upsert_on_constraint(
+        session,
+        RunGlucoseSample,
+        values,
+        constraint="uq_run_glucose_sample",
+        conflict_keys=("run_id", "elapsed_seconds", "source"),
+    )
+
+
+async def upsert_glucose_daily(session: AsyncSession, values: dict[str, Any]) -> None:
+    """Insert a daily glucose record, or update it if (user_id, source, date) exists."""
+    await _upsert_on_constraint(
+        session,
+        GlucoseDailyRecord,
+        values,
+        constraint="uq_glucose_user_source_date",
         conflict_keys=("user_id", "source", "date"),
     )
 
