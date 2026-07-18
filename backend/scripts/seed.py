@@ -6,7 +6,6 @@ import random
 import sys
 import uuid
 from datetime import UTC, date, datetime, time, timedelta
-from statistics import mean
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -15,6 +14,7 @@ from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal
 from app.models import GlucoseDailyRecord, Run, RunGlucoseSample, User
 from app.models.enums import DataSource, RunType, RunTypeSource
+from app.services.glucose import compute_glucose_summary
 
 # --- Run generation ---
 
@@ -164,19 +164,10 @@ def _generate_glucose_for_run(
 
     pre_run_avg = day_baseline + random.uniform(-3, 3)
     post_run_avg = max(50.0, min(220.0, glucose_at_end_target + post_offset + random.gauss(0, 3)))
-    in_range = sum(1 for v in values if 70 <= v <= 140)
-    tir = (in_range / len(values)) * 100
 
-    summary = {
-        "glucose_pre_run_60min_avg_mg_dl": round(pre_run_avg, 1),
-        "glucose_at_start_mg_dl": round(values[0], 1),
-        "glucose_at_end_mg_dl": round(values[-1], 1),
-        "glucose_avg_during_run_mg_dl": round(mean(values), 1),
-        "glucose_min_during_run_mg_dl": round(min(values), 1),
-        "glucose_max_during_run_mg_dl": round(max(values), 1),
-        "glucose_post_run_60min_avg_mg_dl": round(post_run_avg, 1),
-        "glucose_time_in_range_pct_during_run": round(tir, 1),
-    }
+    summary = compute_glucose_summary(
+        values, pre_run_avg=pre_run_avg, post_run_avg=post_run_avg
+    )
 
     return samples, summary
 
