@@ -1,23 +1,160 @@
-"""Oura v2 API client (personal access token) and recovery import.
+"""Oura v2 API client (OAuth2) and recovery import.
+
+Oura deprecated personal access tokens in Dec 2025; new integrations
+authenticate via the OAuth2 authorization-code flow (authorize/token URLs
+per API spec 1.35).
 
 Note: Oura API v2 exposes no cycle endpoint (checked against spec 1.35),
 so this import fills sleep_records only; cycle_records waits for a source.
 """
 
-from datetime import date
+import secrets
+import time
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
+from urllib.parse import urlencode
 from uuid import UUID
 
 import httpx
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal
-from app.models import ImportJob
-from app.models.enums import DataSource, ImportJobStatus
+from app.models import ImportJob, OAuthConnection
+from app.models.enums import DataSource, ImportJobStatus, OAuthProvider
 from app.services.ingest import finish_job, upsert_sleep_record
 
 OURA_BASE_URL = "https://api.ouraring.com/v2/usercollection"
+OURA_AUTHORIZE_URL = "https://cloud.ouraring.com/oauth/authorize"
+OURA_TOKEN_URL = "https://api.ouraring.com/oauth/token"
+OURA_REDIRECT_URI = "http://localhost:8000/integrations/oura/callback"
+OURA_SCOPE = "daily"
+TOKEN_REFRESH_LEEWAY_SECONDS = 60
+STATE_TTL_SECONDS = 600
+
+# Issued OAuth states awaiting the callback. In-process is enough for a
+# single-user dev server; a multi-process deployment would need Redis.
+_pending_states: dict[str, float] = {}
+
+
+class OuraNotConnectedError(Exception):
+    pass
+
+
+def build_authorize_url() -> str:
+    params = urlencode(
+        {
+            "client_id": get_settings().oura_client_id,
+            "redirect_uri": OURA_REDIRECT_URI,
+            "response_type": "code",
+            "scope": OURA_SCOPE,
+            "state": issue_oauth_state(),
+        }
+    )
+    return f"{OURA_AUTHORIZE_URL}?{params}"
+
+
+def issue_oauth_state() -> str:
+    now = time.monotonic()
+    for state, issued in list(_pending_states.items()):
+        if now - issued > STATE_TTL_SECONDS:
+            del _pending_states[state]
+    state = secrets.token_urlsafe(24)
+    _pending_states[state] = now
+    return state
+
+
+def consume_oauth_state(state: str) -> bool:
+    """One-time check that a callback state was issued by us and is fresh."""
+    issued = _pending_states.pop(state, None)
+    return issued is not None and time.monotonic() - issued <= STATE_TTL_SECONDS
+
+
+async def _token_request(grant: dict[str, str]) -> dict:
+    settings = get_settings()
+    async with httpx.AsyncClient(timeout=20) as client:
+        resp = await client.post(
+            OURA_TOKEN_URL,
+            data={
+                **grant,
+                "client_id": settings.oura_client_id,
+                "client_secret": settings.oura_client_secret,
+            },
+        )
+        resp.raise_for_status()
+        return resp.json()
+
+
+async def _get_connection(
+    session: AsyncSession, user_id: UUID
+) -> OAuthConnection | None:
+    result = await session.execute(
+        select(OAuthConnection).where(
+            OAuthConnection.user_id == user_id,
+            OAuthConnection.provider == OAuthProvider.OURA,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+def _apply_tokens(connection: OAuthConnection, tokens: dict) -> None:
+    connection.access_token_encrypted = tokens["access_token"]
+    # Refresh responses may rotate the refresh token; keep the old one if not
+    if tokens.get("refresh_token"):
+        connection.refresh_token_encrypted = tokens["refresh_token"]
+    connection.token_expires_at = datetime.now(UTC) + timedelta(
+        seconds=tokens.get("expires_in", 0)
+    )
+    if tokens.get("scope"):
+        connection.scope = tokens["scope"]
+
+
+async def exchange_oura_code(session: AsyncSession, user_id: UUID, code: str) -> None:
+    """Exchange the callback code for tokens and upsert the connection."""
+    tokens = await _token_request(
+        {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": OURA_REDIRECT_URI,
+        }
+    )
+    connection = await _get_connection(session, user_id)
+    if connection is None:
+        connection = OAuthConnection(
+            user_id=user_id,
+            provider=OAuthProvider.OURA,
+            access_token_encrypted=tokens["access_token"],
+        )
+        session.add(connection)
+    _apply_tokens(connection, tokens)
+    await session.commit()
+
+
+async def get_valid_oura_token(session: AsyncSession, user_id: UUID) -> str:
+    """Return a usable access token, refreshing it first if near expiry."""
+    connection = await _get_connection(session, user_id)
+    if connection is None:
+        raise OuraNotConnectedError(
+            "Oura is not connected — visit /integrations/oura/authorize"
+        )
+    expires_at = connection.token_expires_at
+    if expires_at is not None and expires_at <= datetime.now(UTC) + timedelta(
+        seconds=TOKEN_REFRESH_LEEWAY_SECONDS
+    ):
+        if not connection.refresh_token_encrypted:
+            raise OuraNotConnectedError(
+                "Oura token expired and no refresh token is stored — reauthorize"
+            )
+        tokens = await _token_request(
+            {
+                "grant_type": "refresh_token",
+                "refresh_token": connection.refresh_token_encrypted,
+            }
+        )
+        _apply_tokens(connection, tokens)
+        await session.commit()
+    return connection.access_token_encrypted
 
 
 async def _fetch_collection(
@@ -116,18 +253,25 @@ async def sync_oura(job_id: UUID, start_date: date, end_date: date) -> None:
         if job is None:
             return
         try:
-            pat = get_settings().oura_pat
-            if not pat:
+            settings = get_settings()
+            if not settings.oura_client_id or not settings.oura_client_secret:
                 await finish_job(
                     session,
                     job,
                     status=ImportJobStatus.FAILED,
-                    error="OURA_PAT is not configured",
+                    error="Oura client credentials are not configured",
+                )
+                return
+            try:
+                token = await get_valid_oura_token(session, job.user_id)
+            except OuraNotConnectedError as e:
+                await finish_job(
+                    session, job, status=ImportJobStatus.FAILED, error=str(e)
                 )
                 return
 
             async with httpx.AsyncClient(
-                timeout=20, headers={"Authorization": f"Bearer {pat}"}
+                timeout=20, headers={"Authorization": f"Bearer {token}"}
             ) as client:
                 daily_sleep = await _fetch_collection(
                     client, "daily_sleep", start_date, end_date
