@@ -19,7 +19,7 @@ from pathlib import Path
 from statistics import mean
 from typing import Any
 from uuid import UUID
-from xml.etree.ElementTree import Element, iterparse
+from xml.etree.ElementTree import Element, ParseError, iterparse
 
 from sqlalchemy import select
 
@@ -86,11 +86,37 @@ def _duration_seconds(raw: str, unit: str) -> float:
     return value * 60  # Apple's default durationUnit is "min"
 
 
+def _gpx_start_coords(
+    zf: zipfile.ZipFile, names: list[str], path: str
+) -> tuple[float, float] | None:
+    """First trackpoint of a linked GPX route, rounded to ~1km.
+
+    Privacy: only the first trkpt is read and only 2-decimal coordinates
+    leave this function — full-precision tracks are never stored. A
+    missing or malformed route file yields None, never an error.
+    """
+    member = next((n for n in names if n.endswith(path.lstrip("/"))), None)
+    if member is None:
+        return None
+    try:
+        with zf.open(member) as gpx_file:
+            for _, elem in iterparse(gpx_file, events=("start",)):
+                if elem.tag.rsplit("}", 1)[-1] == "trkpt":
+                    return (
+                        round(float(elem.get("lat")), 2),
+                        round(float(elem.get("lon")), 2),
+                    )
+    except (ParseError, TypeError, ValueError):
+        return None
+    return None
+
+
 def parse_running_workouts(zip_path: Path) -> list[dict[str, Any]]:
     """Pass 1: running <Workout> elements, sorted by start time.
 
     Distance/energy live in attributes (older exports) or in child
     WorkoutStatistics elements (newer exports); both shapes are handled.
+    A child WorkoutRoute's GPX supplies rounded start coordinates.
     """
     workouts: list[dict[str, Any]] = []
     for elem in _iter_top_level(zip_path):
@@ -123,6 +149,7 @@ def parse_running_workouts(zip_path: Path) -> list[dict[str, Any]]:
             else (ended_at - started_at).total_seconds()
         )
 
+        route = elem.find("WorkoutRoute/FileReference")
         workouts.append(
             {
                 "started_at": started_at,
@@ -131,9 +158,23 @@ def parse_running_workouts(zip_path: Path) -> list[dict[str, Any]]:
                 "distance_km": distance_km,
                 "energy_kcal": energy_kcal,
                 "source_name": elem.get("sourceName", ""),
+                "route_path": route.get("path") if route is not None else None,
+                "start_lat": None,
+                "start_lng": None,
                 "raw": dict(elem.attrib),
             }
         )
+
+    if any(w["route_path"] for w in workouts):
+        with zipfile.ZipFile(zip_path) as zf:
+            names = zf.namelist()
+            for workout in workouts:
+                if not workout["route_path"]:
+                    continue
+                coords = _gpx_start_coords(zf, names, workout["route_path"])
+                if coords is not None:
+                    workout["start_lat"], workout["start_lng"] = coords
+
     workouts.sort(key=lambda w: w["started_at"])
     return workouts
 
@@ -227,7 +268,11 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
         if job is None:
             return
         try:
-            workouts = await asyncio.to_thread(parse_running_workouts, zip_path)
+            parsed = await asyncio.to_thread(parse_running_workouts, zip_path)
+            # A workout without distance can't satisfy the run schema
+            # (distance_km > 0) — count it, skip it
+            workouts = [w for w in parsed if w["distance_km"]]
+            skipped = len(parsed) - len(workouts)
             windows = [(w["started_at"], w["ended_at"]) for w in workouts]
             hr_by_window, glucose = await asyncio.to_thread(
                 collect_records, zip_path, windows
@@ -246,15 +291,15 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
                         "imported_at": datetime.now(UTC),
                         "date": workout["started_at"].date(),
                         "started_at": workout["started_at"],
-                        "distance_km": round(distance, 2) if distance else 0.0,
+                        "distance_km": round(distance, 2),
                         "duration_seconds": workout["duration_seconds"],
-                        "avg_pace_seconds_per_km": (
-                            round(workout["duration_seconds"] / distance, 1)
-                            if distance
-                            else None
+                        "avg_pace_seconds_per_km": round(
+                            workout["duration_seconds"] / distance, 1
                         ),
                         "avg_hr": round(mean(hr)) if hr else None,
                         "max_hr": int(max(hr)) if hr else None,
+                        "start_lat": workout["start_lat"],
+                        "start_lng": workout["start_lng"],
                         "run_type": RunType.OTHER,
                         "run_type_source": RunTypeSource.DEFAULT,
                         "raw_title": None,
@@ -323,13 +368,13 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
                 )
             await session.commit()
 
-            total = len(workouts) + samples_written + len(daily_groups)
+            imported = len(workouts) + samples_written + len(daily_groups)
             await finish_job(
                 session,
                 job,
                 status=ImportJobStatus.COMPLETED,
-                items_imported=total,
-                items_total=total,
+                items_imported=imported,
+                items_total=imported + skipped,
             )
         except Exception as e:
             await session.rollback()
