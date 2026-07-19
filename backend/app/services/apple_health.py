@@ -190,18 +190,22 @@ def _window_index(
 
 def collect_records(
     zip_path: Path, windows: list[tuple[datetime, datetime]]
-) -> tuple[dict[int, list[float]], list[tuple[datetime, float, str]]]:
+) -> tuple[dict[int, dict[str, list[float]]], list[tuple[datetime, float, str]]]:
     """Pass 2: stream <Record> elements once.
 
-    Returns heart-rate values grouped by the workout-window index they fall
-    in, and every glucose reading as (observed_at, mg/dL, source_name) —
-    glucose is kept whole because daily records need out-of-window readings
-    too. CGM volume is minute-level at most, so this stays small even when
-    the export itself is hundreds of MB.
+    Heart-rate values are grouped by workout-window index AND sourceName:
+    a run's HR must come from the device that recorded the workout, never
+    averaged across devices (a Garmin marathon at ~159 bpm was dragged to
+    138 by Oura ring records sharing the window). Glucose is kept whole as
+    (observed_at, mg/dL, source_name) because daily records need
+    out-of-window readings too; CGM volume is minute-level at most, so
+    this stays small even when the export itself is hundreds of MB.
     """
     starts = [w[0] for w in windows]
     ends = [w[1] for w in windows]
-    hr_by_window: dict[int, list[float]] = defaultdict(list)
+    hr_by_window: dict[int, dict[str, list[float]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
     glucose: list[tuple[datetime, float, str]] = []
 
     for elem in _iter_top_level(zip_path):
@@ -219,7 +223,7 @@ def collect_records(
         if record_type == HR_TYPE:
             index = _window_index(starts, ends, observed_at)
             if index is not None:
-                hr_by_window[index].append(value)
+                hr_by_window[index][elem.get("sourceName", "")].append(value)
         else:
             if "mmol" in elem.get("unit", "").lower():
                 value *= MMOL_TO_MGDL
@@ -232,11 +236,52 @@ def collect_records(
 
 
 def _workout_source(source_name: str) -> DataSource:
-    return (
-        DataSource.GARMIN
-        if "garmin" in source_name.lower()
-        else DataSource.APPLE_HEALTH
+    """Real export sourceNames: "Connect" is Garmin's app; Strava and Oura
+    write under their own names; watches and run apps ("Xenia's Apple
+    Watch", "Nike Run Club", "5K Runner") stay APPLE_HEALTH."""
+    name = source_name.lower()
+    if "garmin" in name or "connect" in name:
+        return DataSource.GARMIN
+    if "strava" in name:
+        return DataSource.STRAVA
+    if "oura" in name:
+        return DataSource.OURA
+    return DataSource.APPLE_HEALTH
+
+
+def _window_gap(a: dict[str, Any], b: dict[str, Any]) -> timedelta:
+    """Time between two workout windows; zero when they overlap."""
+    return max(
+        a["started_at"] - b["ended_at"],
+        b["started_at"] - a["ended_at"],
+        timedelta(0),
     )
+
+
+def _drop_oura_duplicates(
+    workouts: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], int]:
+    """Oura auto-detects sessions another device already recorded.
+
+    An Oura workout within 60 minutes of a non-Oura workout on the same
+    date is the same run seen twice — keep the device recording, drop
+    the auto-detect.
+    """
+    non_oura = [
+        w for w in workouts if _workout_source(w["source_name"]) != DataSource.OURA
+    ]
+    kept: list[dict[str, Any]] = []
+    dropped = 0
+    for workout in workouts:
+        if _workout_source(workout["source_name"]) == DataSource.OURA and any(
+            other["started_at"].date() == workout["started_at"].date()
+            and _window_gap(workout, other) <= ADJACENT_WINDOW
+            for other in non_oura
+        ):
+            dropped += 1
+            continue
+        kept.append(workout)
+    return kept, dropped
 
 
 def _glucose_source(source_name: str) -> DataSource:
@@ -276,15 +321,16 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
             await session.commit()
 
             parsed = await asyncio.to_thread(parse_running_workouts, zip_path)
+            deduped, duplicates = _drop_oura_duplicates(parsed)
             # A workout whose distance is missing, zero, negative, or so
             # small it rounds to the stored 0.0 can't satisfy the run
             # schema (distance_km > 0) — count it, skip it
             workouts = [
                 w
-                for w in parsed
+                for w in deduped
                 if w["distance_km"] is not None and round(w["distance_km"], 2) > 0
             ]
-            skipped = len(parsed) - len(workouts)
+            skipped = len(deduped) - len(workouts)
             windows = [(w["started_at"], w["ended_at"]) for w in workouts]
             hr_by_window, glucose = await asyncio.to_thread(
                 collect_records, zip_path, windows
@@ -292,7 +338,8 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
             times = [t for t, _, _ in glucose]
 
             for i, workout in enumerate(workouts):
-                hr = hr_by_window.get(i, [])
+                # Same-source only: HR from the device that recorded the run
+                hr = hr_by_window.get(i, {}).get(workout["source_name"], [])
                 distance = workout["distance_km"]
                 await upsert_run(
                     session,
@@ -386,7 +433,8 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
                 job,
                 status=ImportJobStatus.COMPLETED,
                 items_imported=imported,
-                items_total=imported + skipped,
+                items_total=imported + skipped + duplicates,
+                items_skipped_duplicates=duplicates,
             )
         except Exception as e:
             await session.rollback()
