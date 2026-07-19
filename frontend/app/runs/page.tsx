@@ -11,7 +11,28 @@ import {
   formatPace,
   RUN_TYPE_LABELS,
 } from "@/lib/format";
-import type { Run } from "@/lib/types";
+import type { DataSource, Run } from "@/lib/types";
+
+const SOURCE_BADGES: Record<string, { label: string; classes: string }> = {
+  manual: { label: "manual", classes: "bg-gray-100 text-gray-600" },
+  apple_health: { label: "apple", classes: "bg-rose-50 text-rose-700" },
+  garmin: { label: "garmin", classes: "bg-blue-50 text-blue-700" },
+  strava: { label: "strava", classes: "bg-orange-50 text-orange-700" },
+};
+
+function SourceBadge({ source }: { source: DataSource }) {
+  const badge = SOURCE_BADGES[source] ?? {
+    label: source,
+    classes: "bg-gray-100 text-gray-600",
+  };
+  return (
+    <span
+      className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${badge.classes}`}
+    >
+      {badge.label}
+    </span>
+  );
+}
 
 export default function RunsPage() {
   const [runs, setRuns] = useState<Run[] | null>(null);
@@ -63,6 +84,7 @@ export default function RunsPage() {
             <tr>
               <th className="px-4 py-3 font-medium">Date</th>
               <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Source</th>
               <th className="px-4 py-3 font-medium text-right">Distance</th>
               <th className="px-4 py-3 font-medium text-right">Duration</th>
               <th className="px-4 py-3 font-medium text-right">Pace</th>
@@ -80,6 +102,14 @@ export default function RunsPage() {
                 <td className="px-4 py-3">{formatDate(run.date)}</td>
                 <td className="px-4 py-3 text-gray-600">
                   {RUN_TYPE_LABELS[run.run_type]}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="flex items-center gap-1.5">
+                    <SourceBadge source={run.source} />
+                    {run.glucose_at_start_mg_dl !== null && (
+                      <span title="Glucose data attached">🩸</span>
+                    )}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-right">
                   {formatDistance(run.distance_km)}
