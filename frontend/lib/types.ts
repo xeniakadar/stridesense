@@ -118,3 +118,36 @@ export interface LoadPoint {
   acwr: number | null;
   zone: "detraining" | "optimal" | "caution" | "danger" | "building";
 }
+
+// Integrations (phase 3)
+export type ImportJobStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed"
+  | "partial";
+
+export type ImportJobType =
+  | "initial_sync"
+  | "incremental_sync"
+  | "csv_upload"
+  | "file_upload";
+
+export interface ImportJob {
+  id: string;
+  source: DataSource;
+  job_type: ImportJobType;
+  status: ImportJobStatus;
+  items_total: number | null;
+  items_imported: number;
+  items_skipped_duplicates: number;
+  items_failed: number;
+  started_at: string | null;
+  finished_at: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface JobAccepted {
+  job_id: string;
+}

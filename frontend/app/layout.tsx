@@ -27,6 +27,9 @@ export default function RootLayout({
               <Link href="/runs" className="hover:text-gray-900">
                 Runs
               </Link>
+              <Link href="/settings" className="hover:text-gray-900">
+                Settings
+              </Link>
               <Link
                 href="/runs/new"
                 className="text-white bg-gray-900 hover:bg-gray-700 px-3 py-1.5 rounded"

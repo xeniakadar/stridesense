@@ -1,4 +1,6 @@
 import type {
+  ImportJob,
+  JobAccepted,
   Run,
   RunCreate,
   RunUpdate,
@@ -9,7 +11,7 @@ import type {
   SimilarRun,
 } from "@/lib/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -19,12 +21,15 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  // FormData bodies must NOT get a JSON Content-Type — the browser sets
+  // the multipart boundary itself
+  const headers: HeadersInit =
+    init?.body instanceof FormData
+      ? { ...(init?.headers ?? {}) }
+      : { "Content-Type": "application/json", ...(init?.headers ?? {}) };
   const res = await fetch(`${API_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
     ...init,
+    headers,
   });
 
   if (!res.ok) {
@@ -73,4 +78,21 @@ export const api = {
       model: string;
       created_at: string;
     }>(`/runs/${id}/insight`),
+
+  // Integrations
+  listImportJobs: () => request<ImportJob[]>("/integrations/jobs"),
+
+  syncOura: () => request<JobAccepted>("/integrations/oura/sync", { method: "POST" }),
+
+  backfillWeather: () =>
+    request<JobAccepted>("/integrations/weather/backfill", { method: "POST" }),
+
+  uploadAppleHealth: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request<JobAccepted>("/integrations/apple-health/upload", {
+      method: "POST",
+      body: form,
+    });
+  },
 };
