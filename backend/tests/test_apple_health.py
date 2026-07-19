@@ -20,9 +20,9 @@ WATCH_START = datetime(2026, 6, 12, 6, 0, tzinfo=TZ)
 def test_parse_running_workouts_handles_both_distance_shapes() -> None:
     workouts = parse_running_workouts(FIXTURE)
     # the cycling workout must be filtered out
-    assert len(workouts) == 4
+    assert len(workouts) == 5
 
-    garmin, nike, watch, no_distance = workouts
+    garmin, nike, watch, no_distance, zero_distance = workouts
     assert garmin["source_name"] == "Garmin Connect"
     assert garmin["distance_km"] == 8.0  # WorkoutStatistics variant
     assert garmin["energy_kcal"] == 450.0
@@ -42,8 +42,9 @@ def test_parse_running_workouts_handles_both_distance_shapes() -> None:
     # no WorkoutRoute at all
     assert watch["start_lat"] is None
 
-    # the parser reports distance-less workouts; the import skips them
+    # the parser reports these faithfully; the import skips both
     assert no_distance["distance_km"] is None
+    assert zero_distance["distance_km"] == 0.0
 
 
 async def _upload(client: AsyncClient) -> str:
@@ -76,10 +77,11 @@ async def test_apple_health_import_end_to_end(
 
     job = await session.get(ImportJob, job_id)
     assert job.status.value == "completed", job.error_message
-    # 3 runs + 1 glucose sample + 1 daily record; the distance-less
-    # workout is counted in the total but skipped (runs need distance > 0)
+    # 3 runs + 1 glucose sample + 1 daily record; the distance-less and
+    # zero-distance workouts count in the total but are skipped
+    # (runs need distance > 0)
     assert job.items_imported == 5
-    assert job.items_total == 6
+    assert job.items_total == 7
 
     runs = await _fetch_runs(session, isolated_user)
     assert len(runs) == 3
@@ -157,6 +159,32 @@ async def test_apple_health_import_end_to_end(
     )
     assert len(result.scalars().all()) == 1
     assert len(await _fetch_dailies(session, isolated_user)) == 1
+
+
+async def test_reupload_heals_existing_zero_distance_runs(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    # A database already poisoned by a pre-fix import must come clean
+    bad_run = Run(
+        user_id=isolated_user.id,
+        date=date(2025, 9, 23),
+        external_id="bad-zero-distance",
+        distance_km=0.0,
+        duration_seconds=1920,
+    )
+    session.add(bad_run)
+    await session.commit()
+
+    job_id = await _upload(client)
+    job = await session.get(ImportJob, job_id)
+    assert job.status.value == "completed", job.error_message
+
+    result = await session.execute(
+        select(Run).where(
+            Run.user_id == isolated_user.id, Run.distance_km <= 0
+        )
+    )
+    assert result.scalars().all() == []
 
 
 async def test_upload_job_records_source_and_type(

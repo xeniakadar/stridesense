@@ -21,7 +21,7 @@ from typing import Any
 from uuid import UUID
 from xml.etree.ElementTree import Element, ParseError, iterparse
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from app.db.session import AsyncSessionLocal
 from app.models import ImportJob, Run
@@ -268,10 +268,22 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
         if job is None:
             return
         try:
+            # Self-heal: earlier imports could leave distance <= 0 runs that
+            # break RunRead serialization; a re-upload clears them
+            await session.execute(
+                delete(Run).where(Run.user_id == job.user_id, Run.distance_km <= 0)
+            )
+            await session.commit()
+
             parsed = await asyncio.to_thread(parse_running_workouts, zip_path)
-            # A workout without distance can't satisfy the run schema
-            # (distance_km > 0) — count it, skip it
-            workouts = [w for w in parsed if w["distance_km"]]
+            # A workout whose distance is missing, zero, negative, or so
+            # small it rounds to the stored 0.0 can't satisfy the run
+            # schema (distance_km > 0) — count it, skip it
+            workouts = [
+                w
+                for w in parsed
+                if w["distance_km"] is not None and round(w["distance_km"], 2) > 0
+            ]
             skipped = len(parsed) - len(workouts)
             windows = [(w["started_at"], w["ended_at"]) for w in workouts]
             hr_by_window, glucose = await asyncio.to_thread(
