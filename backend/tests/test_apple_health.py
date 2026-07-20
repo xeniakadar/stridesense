@@ -281,6 +281,24 @@ async def test_reupload_heals_existing_zero_distance_runs(
     assert result.scalars().all() == []
 
 
+async def test_corrupt_upload_fails_job_not_request(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    """A non-zip (or truncated/corrupt) upload must fail soft: the job
+    records the error, the request itself never 500s."""
+    response = await client.post(
+        "/integrations/apple-health/upload",
+        files={"file": ("export.zip", b"not actually a zip file", "application/zip")},
+    )
+    assert response.status_code == 202
+    job_id = response.json()["job_id"]
+
+    job = await session.get(ImportJob, job_id)
+    assert job.status.value == "failed"
+    assert job.error_message is not None
+    assert len(await _fetch_runs(session, isolated_user)) == 0
+
+
 async def test_upload_job_records_source_and_type(
     client: AsyncClient, session: AsyncSession, isolated_user
 ) -> None:
