@@ -1,5 +1,6 @@
 import type {
   ImportJob,
+  Insight,
   JobAccepted,
   Run,
   RunCreate,
@@ -70,14 +71,10 @@ export const api = {
 
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
 
-  getInsight: (id: string) =>
-    request<{
-      id: string;
-      run_id: string;
-      content: string;
-      model: string;
-      created_at: string;
-    }>(`/runs/${id}/insight`),
+  getInsight: (id: string) => request<Insight>(`/runs/${id}/insight`),
+
+  regenerateInsight: (id: string) =>
+    request<Insight>(`/runs/${id}/insight/regenerate`, { method: "POST" }),
 
   // Integrations
   listImportJobs: () => request<ImportJob[]>("/integrations/jobs"),

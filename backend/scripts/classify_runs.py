@@ -48,6 +48,7 @@ from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal
 from app.models import Run
 from app.models.enums import RunType, RunTypeSource
+from app.services.insights import invalidate_insights
 
 # Need a real distribution to z-score against — too few runs and every
 # z-score is noise, not signal.
@@ -176,6 +177,7 @@ async def main() -> None:
         for run, inferred in plan:
             run.run_type = inferred
             run.run_type_source = RunTypeSource.INFERRED
+            await invalidate_insights(session, run.id)
         await session.commit()
         print(f"\nApplied: {len(plan)} runs classified.")
 

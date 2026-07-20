@@ -14,6 +14,7 @@ from app.db.session import AsyncSessionLocal
 from app.models import ImportJob, Run, RunWeatherSample, User
 from app.models.enums import ImportJobStatus
 from app.services.ingest import finish_job
+from app.services.insights import invalidate_insights
 
 ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive"
 HOURLY_VARS = (
@@ -144,6 +145,7 @@ async def enrich_run(
 
     for field, value in compute_weather_summary(sample_values).items():
         setattr(run, field, value)
+    await invalidate_insights(session, run.id)
     await session.commit()
     return True
 

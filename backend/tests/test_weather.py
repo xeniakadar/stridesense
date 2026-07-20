@@ -5,7 +5,7 @@ from httpx import AsyncClient, Response
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ImportJob, Run, RunWeatherSample
+from app.models import ImportJob, Insight, Run, RunWeatherSample
 from app.models.enums import DataSource, RunType, RunTypeSource
 from app.services.weather import ARCHIVE_URL
 
@@ -83,6 +83,29 @@ async def test_weather_backfill_enriches_and_is_idempotent(
     assert job.source == DataSource.OPEN_METEO
     assert job.status.value == "completed"
     assert job.finished_at is not None
+
+
+@respx.mock
+async def test_weather_backfill_invalidates_cached_insight(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    respx.get(ARCHIVE_URL).mock(return_value=Response(200, json=OPEN_METEO_PAYLOAD))
+
+    run = _make_run(isolated_user.id)
+    session.add(run)
+    await session.commit()
+
+    cached = Insight(run_id=run.id, content="stale narration", model="test")
+    session.add(cached)
+    await session.commit()
+
+    response = await client.post("/integrations/weather/backfill")
+    assert response.status_code == 202
+
+    result = await session.execute(
+        select(Insight).where(Insight.run_id == run.id)
+    )
+    assert result.scalars().first() is None
 
 
 @respx.mock

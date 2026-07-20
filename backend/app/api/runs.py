@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
-from app.models import Insight
+from app.models import Insight, Run
 from app.schemas.analytics import InsightRead, SimilarRunRead
 from app.schemas.run import RunCreate, RunRead, RunUpdate
 from app.services import (
@@ -20,6 +20,7 @@ from app.services.insights import (
     INSIGHT_MODEL,
     InsightUnavailableError,
     generate_insight,
+    invalidate_insights,
 )
 from app.services.similarity import find_similar_runs
 from app.services.training_load import acwr_for_run
@@ -106,6 +107,27 @@ async def delete_run_endpoint(
     except RunNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
 
+async def _generate_and_cache_insight(
+    session: AsyncSession, user_id: UUID, run: Run, run_id: UUID
+) -> Insight:
+    candidates = await list_runs(session, user_id, limit=500)
+    similar = find_similar_runs(run, candidates, limit=5)
+    load = acwr_for_run(run, candidates)
+
+    try:
+        content = await generate_insight(run, similar, load)
+    except InsightUnavailableError as e:
+        raise HTTPException(
+            status_code=503, detail="Insight temporarily unavailable"
+        ) from e
+
+    insight = Insight(run_id=run_id, content=content, model=INSIGHT_MODEL)
+    session.add(insight)
+    await session.commit()
+    await session.refresh(insight)
+    return insight
+
+
 @router.get("/{run_id}/insight", response_model=InsightRead)
 async def get_insight_endpoint(
     run_id: UUID,
@@ -126,19 +148,23 @@ async def get_insight_endpoint(
     if cached:
         return InsightRead.model_validate(cached)
 
-    candidates = await list_runs(session, user_id, limit=500)
-    similar = find_similar_runs(run, candidates, limit=5)
-    load = acwr_for_run(run, candidates)
+    insight = await _generate_and_cache_insight(session, user_id, run, run_id)
+    return InsightRead.model_validate(insight)
 
+
+@router.post("/{run_id}/insight/regenerate", response_model=InsightRead)
+async def regenerate_insight_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> InsightRead:
     try:
-        content = await generate_insight(run, similar, load)
-    except InsightUnavailableError as e:
-        raise HTTPException(
-            status_code=503, detail="Insight temporarily unavailable"
-        ) from e
+        run = await get_run(session, user_id, run_id)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
 
-    insight = Insight(run_id=run_id, content=content, model=INSIGHT_MODEL)
-    session.add(insight)
+    await invalidate_insights(session, run_id)
     await session.commit()
-    await session.refresh(insight)
+
+    insight = await _generate_and_cache_insight(session, user_id, run, run_id)
     return InsightRead.model_validate(insight)

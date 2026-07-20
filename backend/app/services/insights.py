@@ -3,10 +3,14 @@
 The model reasons ONLY over the structured context we assemble. No external
 knowledge about the specific run, no invented numbers."""
 
+from uuid import UUID
+
 from anthropic import AsyncAnthropic
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Run
+from app.models import Insight, Run
 from app.services.similarity import SimilarRun
 from app.services.training_load import LoadPoint
 
@@ -16,6 +20,18 @@ MAX_TOKENS = 600
 
 class InsightUnavailableError(Exception):
     """Raised when insight generation can't proceed (no key, API failure)."""
+
+
+async def invalidate_insights(session: AsyncSession, run_id: UUID) -> None:
+    """Delete cached insights for a run so the next GET regenerates fresh.
+
+    Call this from every code path that changes a run's insight-relevant
+    fields — weather enrichment, glucose summary computation, the run
+    update endpoint (run_type/distance/duration/HR), classify_runs.py
+    --apply — so an insight never keeps narrating data the run no longer
+    has. Doesn't commit; batches into the caller's own commit.
+    """
+    await session.execute(delete(Insight).where(Insight.run_id == run_id))
 
 
 def _format_pace(seconds_per_km: float | None) -> str:
