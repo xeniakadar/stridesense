@@ -20,7 +20,7 @@ export type DataSource =
   | "libre"
   | "open_meteo";
 
-export type RunTypeSource = "user" | "extracted" | "default";
+export type RunTypeSource = "user" | "extracted" | "default" | "inferred";
 
 export interface Run {
   id: string;
