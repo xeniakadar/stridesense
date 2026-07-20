@@ -267,19 +267,31 @@ SOURCE_PRIORITY: dict[DataSource, int] = {
     DataSource.OURA: 3,
 }
 
+# Device-recorded twins (Garmin/Strava/AppleHealth all uploading the same
+# watch recording) share near-identical timestamps — seconds of clock
+# skew, confirmed against the real export, never more. Only Oura's
+# auto-detection is imprecise enough to need the wide ADJACENT_WINDOW.
+DEVICE_TWIN_WINDOW = timedelta(minutes=5)
+
+
+def _duplicate_window(source_a: DataSource, source_b: DataSource) -> timedelta:
+    return ADJACENT_WINDOW if DataSource.OURA in (source_a, source_b) else DEVICE_TWIN_WINDOW
+
 
 def _cluster_duplicate_workouts(workouts: list[dict[str, Any]]) -> list[list[int]]:
     """Group workout indices that are the same physical run on different devices.
 
-    Two workouts from DIFFERENT sources on the same date, with windows
-    within ADJACENT_WINDOW of each other, are the same run seen twice —
-    zero gap for an exact multi-device timestamp match (Garmin/Strava
-    both upload every run), up to 60 minutes for an auto-detected session
-    (Oura). Workouts from the SAME source are never merged this way — a
-    second run by the same device on the same day is a real second run,
-    not a duplicate. Union-find so a chain of near-matches (e.g. Garmin
-    within range of Strava within range of Oura) collapses transitively
-    into one cluster even if the two ends alone wouldn't match.
+    Two workouts from DIFFERENT sources on the same date, within
+    _duplicate_window() of each other, are the same run seen twice.
+    Workouts from the SAME source are never merged this way — a second
+    run by the same device on the same day is a real second run, not a
+    duplicate. Union-find, so a chain of near-matches collapses
+    transitively into one cluster — but the tight non-Oura window keeps
+    that chain from snagging an unrelated same-source run that happens to
+    fall within Oura's wider tolerance of a shared neighbor (a real
+    export had two distinct Garmin runs an hour apart, one of which had
+    a Strava twin; a single shared window size would have merged both
+    Garmin runs into one and silently dropped a real workout).
     """
     n = len(workouts)
     parent = list(range(n))
@@ -297,11 +309,12 @@ def _cluster_duplicate_workouts(workouts: list[dict[str, Any]]) -> list[list[int
 
     for i in range(n):
         for j in range(i + 1, n):
+            si = _workout_source(workouts[i]["source_name"])
+            sj = _workout_source(workouts[j]["source_name"])
             if (
-                _workout_source(workouts[i]["source_name"])
-                != _workout_source(workouts[j]["source_name"])
+                si != sj
                 and workouts[i]["started_at"].date() == workouts[j]["started_at"].date()
-                and _window_gap(workouts[i], workouts[j]) <= ADJACENT_WINDOW
+                and _window_gap(workouts[i], workouts[j]) <= _duplicate_window(si, sj)
             ):
                 union(i, j)
 

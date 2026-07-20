@@ -92,6 +92,38 @@ def test_merge_duplicate_workouts_prefers_priority_and_adopts_coords() -> None:
     assert winner["start_lng"] == 19.06
 
 
+def _synthetic_workout(started_at: datetime, minutes: int, source_name: str) -> dict:
+    return {
+        "started_at": started_at,
+        "ended_at": started_at + timedelta(minutes=minutes),
+        "duration_seconds": minutes * 60,
+        "distance_km": 6.36,
+        "energy_kcal": None,
+        "source_name": source_name,
+        "route_path": None,
+        "start_lat": None,
+        "start_lng": None,
+        "raw": {},
+    }
+
+
+def test_merge_duplicate_workouts_does_not_chain_unrelated_same_source_runs() -> None:
+    """Real-export regression: two distinct Garmin runs an hour apart must
+    not collapse into one just because a Strava twin of the FIRST run
+    falls within Oura's (wider) matching window of the second — a single
+    shared window size did exactly that against the live export."""
+    base = datetime(2024, 12, 2, 10, 1, 27, tzinfo=UTC)
+    garmin_1 = _synthetic_workout(base, 41, "Connect")
+    strava_twin = _synthetic_workout(base, 41, "Strava")
+    garmin_2 = _synthetic_workout(base + timedelta(hours=1), 41, "Connect")
+
+    kept, dropped = _merge_duplicate_workouts([garmin_1, strava_twin, garmin_2])
+
+    assert dropped == 1  # only the Strava twin merges into garmin_1
+    started_ats = sorted(w["started_at"] for w in kept)
+    assert started_ats == [base, base + timedelta(hours=1)]
+
+
 async def _upload(client: AsyncClient) -> str:
     response = await client.post(
         "/integrations/apple-health/upload",
