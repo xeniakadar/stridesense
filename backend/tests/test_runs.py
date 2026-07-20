@@ -1,11 +1,12 @@
 from datetime import date
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Run
+from app.models import Insight, Run
 from app.models.enums import RunTypeSource
 
 
@@ -111,3 +112,41 @@ async def test_updating_other_fields_leaves_run_type_source_untouched(
     )
     assert response.status_code == 200
     assert response.json()["run_type_source"] == "default"
+
+
+async def test_updating_insight_relevant_field_invalidates_cached_insight(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    created = (await client.post("/runs", json=_valid_payload())).json()
+    session.add(
+        Insight(run_id=UUID(created["id"]), content="stale narration", model="test")
+    )
+    await session.commit()
+
+    response = await client.put(f"/runs/{created['id']}", json={"distance_km": 12.0})
+    assert response.status_code == 200
+
+    result = await session.execute(
+        select(Insight).where(Insight.run_id == UUID(created["id"]))
+    )
+    assert result.scalars().first() is None
+
+
+async def test_updating_unrelated_field_preserves_cached_insight(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    created = (await client.post("/runs", json=_valid_payload())).json()
+    session.add(
+        Insight(run_id=UUID(created["id"]), content="still valid", model="test")
+    )
+    await session.commit()
+
+    response = await client.put(
+        f"/runs/{created['id']}", json={"notes": "Just a note update."}
+    )
+    assert response.status_code == 200
+
+    result = await session.execute(
+        select(Insight).where(Insight.run_id == UUID(created["id"]))
+    )
+    assert result.scalars().first() is not None

@@ -33,6 +33,7 @@ from app.services.ingest import (
     upsert_glucose_sample,
     upsert_run,
 )
+from app.services.insights import invalidate_insights
 
 RUNNING_WORKOUT_TYPE = "HKWorkoutActivityTypeRunning"
 HR_TYPE = "HKQuantityTypeIdentifierHeartRate"
@@ -483,6 +484,7 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
                     )
                     for field, value in summary.items():
                         setattr(run, field, value)
+                    await invalidate_insights(session, run.id)
 
             daily_groups: dict[tuple[DataSource, Any], list[tuple[datetime, float]]]
             daily_groups = defaultdict(list)

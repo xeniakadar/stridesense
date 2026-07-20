@@ -6,6 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Run
 from app.models.enums import DataSource, RunTypeSource
 from app.schemas.run import RunCreate, RunUpdate
+from app.services.insights import invalidate_insights
+
+# Fields whose change makes a cached insight's narration stale.
+INSIGHT_RELEVANT_FIELDS = frozenset(
+    {"run_type", "distance_km", "duration_seconds", "avg_hr", "max_hr"}
+)
 
 
 class RunNotFoundError(Exception):
@@ -93,6 +99,9 @@ async def update_run(
         run.avg_pace_seconds_per_km = _compute_pace_seconds_per_km(
             run.distance_km, run.duration_seconds
         )
+
+    if INSIGHT_RELEVANT_FIELDS & update_data.keys():
+        await invalidate_insights(session, run.id)
 
     await session.commit()
     await session.refresh(run)

@@ -95,3 +95,61 @@ async def test_insight_unavailable_returns_503(
     ):
         res = await client.get(f"/runs/{created['id']}/insight")
         assert res.status_code == 503
+
+
+async def test_regenerate_insight_replaces_cached_content(
+    client: AsyncClient, isolated_user
+) -> None:
+    created = (
+        await client.post("/runs", json=_run_payload(date(2026, 6, 3)))
+    ).json()
+
+    with patch(
+        "app.api.runs.generate_insight",           # patch where it's LOOKED UP
+        new=AsyncMock(return_value="original narration"),
+    ):
+        first = await client.get(f"/runs/{created['id']}/insight")
+        assert first.status_code == 200
+        assert first.json()["content"] == "original narration"
+
+    with patch(
+        "app.api.runs.generate_insight",
+        new=AsyncMock(return_value="fresh narration"),
+    ) as mock_generate:
+        regenerated = await client.post(f"/runs/{created['id']}/insight/regenerate")
+        assert regenerated.status_code == 200
+        assert regenerated.json()["content"] == "fresh narration"
+        assert mock_generate.await_count == 1
+
+    # The old cached row is gone, not just superseded — GET returns the
+    # regenerated content without calling generate_insight again
+    with patch(
+        "app.api.runs.generate_insight", new=AsyncMock()
+    ) as mock_generate_after:
+        again = await client.get(f"/runs/{created['id']}/insight")
+        assert again.json()["content"] == "fresh narration"
+        assert mock_generate_after.await_count == 0
+
+
+async def test_regenerate_insight_unavailable_returns_503(
+    client: AsyncClient, isolated_user
+) -> None:
+    from app.services.insights import InsightUnavailableError
+
+    created = (
+        await client.post("/runs", json=_run_payload(date(2026, 6, 4)))
+    ).json()
+
+    with patch(
+        "app.api.runs.generate_insight",
+        new=AsyncMock(side_effect=InsightUnavailableError("no key")),
+    ):
+        res = await client.post(f"/runs/{created['id']}/insight/regenerate")
+        assert res.status_code == 503
+
+
+async def test_regenerate_insight_not_found(client: AsyncClient, isolated_user) -> None:
+    from uuid import uuid4
+
+    res = await client.post(f"/runs/{uuid4()}/insight/regenerate")
+    assert res.status_code == 404

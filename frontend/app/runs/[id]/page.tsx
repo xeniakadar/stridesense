@@ -240,6 +240,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 function InsightSection({ runId }: { runId: string }) {
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -253,11 +254,37 @@ function InsightSection({ runId }: { runId: string }) {
       .finally(() => setLoading(false));
   }, [runId]);
 
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    setError(null);
+    try {
+      const res = await api.regenerateInsight(runId);
+      setInsight(res.content);
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Could not regenerate insight."
+      );
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <section>
-      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500 mb-3">
-        Insight
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+          Insight
+        </h2>
+        {!loading && (
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="text-xs px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {regenerating ? "Regenerating…" : "Regenerate"}
+          </button>
+        )}
+      </div>
       {loading && <p className="text-sm text-gray-400">Analyzing this run…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       {insight && (

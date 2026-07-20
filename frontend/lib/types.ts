@@ -151,3 +151,11 @@ export interface ImportJob {
 export interface JobAccepted {
   job_id: string;
 }
+
+export interface Insight {
+  id: string;
+  run_id: string;
+  content: string;
+  model: string;
+  created_at: string;
+}
