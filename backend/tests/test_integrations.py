@@ -43,6 +43,49 @@ async def test_upsert_run_is_idempotent(session: AsyncSession) -> None:
         await session.commit()
 
 
+async def test_upsert_run_preserves_coordinates_when_new_value_is_null(
+    session: AsyncSession, isolated_user
+) -> None:
+    """A later import with no GPS (e.g. a stale export missing its GPX
+    route) must not blank out coordinates a prior import already set."""
+    external_id = f"test-{uuid4()}"
+    try:
+        await upsert_run(
+            session,
+            _run_values(external_id, 10.0)
+            | {"user_id": isolated_user.id, "start_lat": 47.51, "start_lng": 19.08},
+        )
+        await upsert_run(
+            session,
+            _run_values(external_id, 10.0)
+            | {"user_id": isolated_user.id, "start_lat": None, "start_lng": None},
+        )
+        await session.commit()
+
+        result = await session.execute(
+            select(Run).where(
+                Run.source == DataSource.STRAVA, Run.external_id == external_id
+            )
+        )
+        run = result.scalar_one()
+        assert run.start_lat == 47.51
+        assert run.start_lng == 19.08
+
+        # A genuine new value still wins over the preserved old one
+        await upsert_run(
+            session,
+            _run_values(external_id, 10.0)
+            | {"user_id": isolated_user.id, "start_lat": 38.71, "start_lng": -9.14},
+        )
+        await session.commit()
+        await session.refresh(run)
+        assert run.start_lat == 38.71
+        assert run.start_lng == -9.14
+    finally:
+        await session.execute(delete(Run).where(Run.external_id == external_id))
+        await session.commit()
+
+
 async def test_job_lifecycle_and_listing(
     client: AsyncClient, session: AsyncSession
 ) -> None:

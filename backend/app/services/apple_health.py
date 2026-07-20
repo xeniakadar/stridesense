@@ -258,29 +258,90 @@ def _window_gap(a: dict[str, Any], b: dict[str, Any]) -> timedelta:
     )
 
 
-def _drop_oura_duplicates(
+# Highest priority first: the watch/app that actually recorded the run
+# beats a phone-app upload, which beats an auto-detected guess.
+SOURCE_PRIORITY: dict[DataSource, int] = {
+    DataSource.GARMIN: 0,
+    DataSource.STRAVA: 1,
+    DataSource.APPLE_HEALTH: 2,
+    DataSource.OURA: 3,
+}
+
+
+def _cluster_duplicate_workouts(workouts: list[dict[str, Any]]) -> list[list[int]]:
+    """Group workout indices that are the same physical run on different devices.
+
+    Two workouts from DIFFERENT sources on the same date, with windows
+    within ADJACENT_WINDOW of each other, are the same run seen twice —
+    zero gap for an exact multi-device timestamp match (Garmin/Strava
+    both upload every run), up to 60 minutes for an auto-detected session
+    (Oura). Workouts from the SAME source are never merged this way — a
+    second run by the same device on the same day is a real second run,
+    not a duplicate. Union-find so a chain of near-matches (e.g. Garmin
+    within range of Strava within range of Oura) collapses transitively
+    into one cluster even if the two ends alone wouldn't match.
+    """
+    n = len(workouts)
+    parent = list(range(n))
+
+    def find(i: int) -> int:
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def union(i: int, j: int) -> None:
+        ri, rj = find(i), find(j)
+        if ri != rj:
+            parent[ri] = rj
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            if (
+                _workout_source(workouts[i]["source_name"])
+                != _workout_source(workouts[j]["source_name"])
+                and workouts[i]["started_at"].date() == workouts[j]["started_at"].date()
+                and _window_gap(workouts[i], workouts[j]) <= ADJACENT_WINDOW
+            ):
+                union(i, j)
+
+    clusters: dict[int, list[int]] = defaultdict(list)
+    for i in range(n):
+        clusters[find(i)].append(i)
+    return list(clusters.values())
+
+
+def _merge_duplicate_workouts(
     workouts: list[dict[str, Any]],
 ) -> tuple[list[dict[str, Any]], int]:
-    """Oura auto-detects sessions another device already recorded.
+    """Collapse same-run duplicates across devices to the highest-priority source.
 
-    An Oura workout within 60 minutes of a non-Oura workout on the same
-    date is the same run seen twice — keep the device recording, drop
-    the auto-detect.
+    Within each cluster (see _cluster_duplicate_workouts), keep the
+    highest-SOURCE_PRIORITY workout. If it has no GPS — real Garmin
+    ("Connect") exports usually carry no WorkoutRoute — adopt rounded
+    coordinates from whichever dropped duplicate does have them (Strava,
+    a watch, or Oura routes for the same run often do). Dropped entries
+    are never imported; the caller counts them as skipped duplicates.
     """
-    non_oura = [
-        w for w in workouts if _workout_source(w["source_name"]) != DataSource.OURA
-    ]
     kept: list[dict[str, Any]] = []
     dropped = 0
-    for workout in workouts:
-        if _workout_source(workout["source_name"]) == DataSource.OURA and any(
-            other["started_at"].date() == workout["started_at"].date()
-            and _window_gap(workout, other) <= ADJACENT_WINDOW
-            for other in non_oura
-        ):
-            dropped += 1
+    for cluster in _cluster_duplicate_workouts(workouts):
+        if len(cluster) == 1:
+            kept.append(workouts[cluster[0]])
             continue
-        kept.append(workout)
+        cluster.sort(
+            key=lambda i: SOURCE_PRIORITY[_workout_source(workouts[i]["source_name"])]
+        )
+        winner = workouts[cluster[0]]
+        if winner["start_lat"] is None:
+            for i in cluster[1:]:
+                if workouts[i]["start_lat"] is not None:
+                    winner["start_lat"] = workouts[i]["start_lat"]
+                    winner["start_lng"] = workouts[i]["start_lng"]
+                    break
+        kept.append(winner)
+        dropped += len(cluster) - 1
+    kept.sort(key=lambda w: w["started_at"])
     return kept, dropped
 
 
@@ -321,7 +382,7 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
             await session.commit()
 
             parsed = await asyncio.to_thread(parse_running_workouts, zip_path)
-            deduped, duplicates = _drop_oura_duplicates(parsed)
+            deduped, duplicates = _merge_duplicate_workouts(parsed)
             # A workout whose distance is missing, zero, negative, or so
             # small it rounds to the stored 0.0 can't satisfy the run
             # schema (distance_km > 0) — count it, skip it
