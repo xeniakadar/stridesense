@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,16 +19,28 @@ async def _upsert_on_constraint(
     values: dict[str, Any],
     constraint: str,
     conflict_keys: tuple[str, ...],
+    preserve_existing: tuple[str, ...] = (),
 ) -> None:
     """Insert a row, or refresh every non-key column on conflict.
 
     Idempotent by design: re-importing the same record refreshes its data
     instead of crashing or duplicating.
+
+    `preserve_existing` columns are COALESCEd instead of overwritten: a
+    fresh None never clobbers a value the row already has (e.g. a stale
+    export with a missing GPX route must not blank out coordinates a
+    prior import or the city-adoption script already set). A real,
+    non-null new value still wins.
     """
     stmt = pg_insert(model).values(**values)
-    update_cols = {
-        k: stmt.excluded[k] for k in values if k not in ("id", *conflict_keys)
-    }
+    update_cols: dict[str, Any] = {}
+    for k in values:
+        if k in ("id", *conflict_keys):
+            continue
+        if k in preserve_existing:
+            update_cols[k] = func.coalesce(stmt.excluded[k], getattr(model, k))
+        else:
+            update_cols[k] = stmt.excluded[k]
     stmt = stmt.on_conflict_do_update(constraint=constraint, set_=update_cols)
     await session.execute(stmt)
 
@@ -40,6 +53,7 @@ async def upsert_run(session: AsyncSession, values: dict[str, Any]) -> None:
         values,
         constraint="uq_runs_source_external",
         conflict_keys=("user_id", "source", "external_id"),
+        preserve_existing=("start_lat", "start_lng"),
     )
 
 

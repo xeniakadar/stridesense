@@ -36,6 +36,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshJobs = useCallback(() => {
@@ -51,9 +52,18 @@ export default function SettingsPage() {
   useEffect(() => {
     refreshJobs();
     // Landing back from the OAuth redirect: ?connected=oura
-    const connected = new URLSearchParams(window.location.search).get("connected");
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get("connected");
     if (connected) {
       setNotice(`${SOURCE_LABELS[connected] ?? connected} connected.`);
+      // Strip the param so a later refresh doesn't re-show a stale banner
+      params.delete("connected");
+      const query = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        window.location.pathname + (query ? `?${query}` : "")
+      );
     }
   }, [refreshJobs]);
 
@@ -66,16 +76,34 @@ export default function SettingsPage() {
     return () => clearInterval(id);
   }, [hasActiveJob, refreshJobs]);
 
-  const trigger = async (action: () => Promise<{ job_id: string }>, label: string) => {
+  const trigger = async (
+    action: () => Promise<{ job_id: string }>,
+    label: string
+  ): Promise<boolean> => {
     setNotice(null);
     setError(null);
     try {
       await action();
       setNotice(`${label} started.`);
       refreshJobs();
+      return true;
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));
+      return false;
     }
+  };
+
+  // Guards Sync now / Backfill weather against double-submit; upload has
+  // its own `uploading` state since it also disables the file picker.
+  const triggerGuarded = async (
+    key: string,
+    action: () => Promise<{ job_id: string }>,
+    label: string
+  ) => {
+    if (busyAction) return;
+    setBusyAction(key);
+    await trigger(action, label);
+    setBusyAction(null);
   };
 
   const uploadExport = async () => {
@@ -85,9 +113,11 @@ export default function SettingsPage() {
       return;
     }
     setUploading(true);
-    await trigger(() => api.uploadAppleHealth(file), "Apple Health import");
+    const ok = await trigger(() => api.uploadAppleHealth(file), "Apple Health import");
     setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    // Only clear the picked file once the upload actually succeeded —
+    // clearing it after a failure forced re-picking the file to retry.
+    if (ok && fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
@@ -120,10 +150,11 @@ export default function SettingsPage() {
               Connect
             </a>
             <button
-              onClick={() => trigger(api.syncOura, "Oura sync")}
-              className="border border-gray-300 px-3 py-1.5 rounded text-sm hover:bg-gray-50"
+              onClick={() => triggerGuarded("oura-sync", api.syncOura, "Oura sync")}
+              disabled={busyAction === "oura-sync"}
+              className="border border-gray-300 px-3 py-1.5 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
             >
-              Sync now
+              {busyAction === "oura-sync" ? "Syncing…" : "Sync now"}
             </button>
           </div>
         </div>
@@ -157,10 +188,13 @@ export default function SettingsPage() {
             Backfill Open-Meteo conditions for runs that are missing weather.
           </p>
           <button
-            onClick={() => trigger(api.backfillWeather, "Weather backfill")}
-            className="border border-gray-300 px-3 py-1.5 rounded text-sm hover:bg-gray-50"
+            onClick={() =>
+              triggerGuarded("weather-backfill", api.backfillWeather, "Weather backfill")
+            }
+            disabled={busyAction === "weather-backfill"}
+            className="border border-gray-300 px-3 py-1.5 rounded text-sm hover:bg-gray-50 disabled:opacity-50"
           >
-            Backfill weather
+            {busyAction === "weather-backfill" ? "Backfilling…" : "Backfill weather"}
           </button>
         </div>
       </div>

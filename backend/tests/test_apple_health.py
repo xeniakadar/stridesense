@@ -7,12 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import GlucoseDailyRecord, ImportJob, Run, RunGlucoseSample, User
 from app.models.enums import DataSource
-from app.services.apple_health import _workout_source, parse_running_workouts
+from app.services.apple_health import (
+    _merge_duplicate_workouts,
+    _workout_source,
+    parse_running_workouts,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "apple_health_mini.zip"
 TZ = timezone(timedelta(hours=2))
 
-GARMIN_START = datetime(2026, 6, 10, 7, 0, tzinfo=TZ)
+GARMIN_START = datetime(2026, 6, 10, 7, 0, tzinfo=TZ)  # also the Strava twin's start
 OURA_DUP_START = datetime(2026, 6, 10, 7, 45, tzinfo=TZ)
 NIKE_START = datetime(2026, 6, 11, 7, 0, tzinfo=TZ)
 WATCH_START = datetime(2026, 6, 12, 6, 0, tzinfo=TZ)
@@ -31,9 +35,11 @@ def test_workout_source_maps_real_export_names() -> None:
 def test_parse_running_workouts_handles_both_distance_shapes() -> None:
     workouts = parse_running_workouts(FIXTURE)
     # the cycling workout must be filtered out
-    assert len(workouts) == 7
+    assert len(workouts) == 8
 
-    garmin, oura_dup, nike, watch, no_distance, zero_distance, oura = workouts
+    garmin, strava_twin, oura_dup, nike, watch, no_distance, zero_distance, oura = (
+        workouts
+    )
     assert garmin["source_name"] == "Connect"
     assert garmin["distance_km"] == 8.0  # WorkoutStatistics variant
     assert garmin["energy_kcal"] == 450.0
@@ -41,6 +47,12 @@ def test_parse_running_workouts_handles_both_distance_shapes() -> None:
     assert garmin["started_at"] == GARMIN_START
     # real Garmin workouts carry no WorkoutRoute
     assert garmin["start_lat"] is None
+
+    # Strava uploaded the exact same run — same window, its own route
+    assert strava_twin["source_name"] == "Strava"
+    assert strava_twin["started_at"] == GARMIN_START
+    assert strava_twin["start_lat"] == 47.52
+    assert strava_twin["start_lng"] == 19.06
 
     assert nike["distance_km"] == 5.2  # attribute variant
     assert nike["energy_kcal"] == 300.0
@@ -60,6 +72,56 @@ def test_parse_running_workouts_handles_both_distance_shapes() -> None:
     # the parser reports Oura workouts faithfully; the import dedupes
     assert oura_dup["started_at"] == OURA_DUP_START
     assert oura["started_at"] == OURA_START
+
+
+def test_merge_duplicate_workouts_prefers_priority_and_adopts_coords() -> None:
+    workouts = parse_running_workouts(FIXTURE)
+    kept, dropped = _merge_duplicate_workouts(workouts)
+
+    # Strava twin + Oura auto-detect are the same physical run as Garmin
+    assert dropped == 2
+    kept_sources = {_workout_source(w["source_name"]) for w in kept}
+    assert DataSource.STRAVA not in kept_sources  # lost to Garmin on priority
+    assert DataSource.OURA in kept_sources  # the standalone Oura run survives
+
+    winner = next(w for w in kept if w["started_at"] == GARMIN_START)
+    assert _workout_source(winner["source_name"]) == DataSource.GARMIN
+    # Garmin itself carries no route; coordinates adopted from the dropped
+    # Strava duplicate's GPX
+    assert winner["start_lat"] == 47.52
+    assert winner["start_lng"] == 19.06
+
+
+def _synthetic_workout(started_at: datetime, minutes: int, source_name: str) -> dict:
+    return {
+        "started_at": started_at,
+        "ended_at": started_at + timedelta(minutes=minutes),
+        "duration_seconds": minutes * 60,
+        "distance_km": 6.36,
+        "energy_kcal": None,
+        "source_name": source_name,
+        "route_path": None,
+        "start_lat": None,
+        "start_lng": None,
+        "raw": {},
+    }
+
+
+def test_merge_duplicate_workouts_does_not_chain_unrelated_same_source_runs() -> None:
+    """Real-export regression: two distinct Garmin runs an hour apart must
+    not collapse into one just because a Strava twin of the FIRST run
+    falls within Oura's (wider) matching window of the second — a single
+    shared window size did exactly that against the live export."""
+    base = datetime(2024, 12, 2, 10, 1, 27, tzinfo=UTC)
+    garmin_1 = _synthetic_workout(base, 41, "Connect")
+    strava_twin = _synthetic_workout(base, 41, "Strava")
+    garmin_2 = _synthetic_workout(base + timedelta(hours=1), 41, "Connect")
+
+    kept, dropped = _merge_duplicate_workouts([garmin_1, strava_twin, garmin_2])
+
+    assert dropped == 1  # only the Strava twin merges into garmin_1
+    started_ats = sorted(w["started_at"] for w in kept)
+    assert started_ats == [base, base + timedelta(hours=1)]
 
 
 async def _upload(client: AsyncClient) -> str:
@@ -93,24 +155,29 @@ async def test_apple_health_import_end_to_end(
     job = await session.get(ImportJob, job_id)
     assert job.status.value == "completed", job.error_message
     # 4 runs + 1 glucose sample + 1 daily record; two distance-less
-    # workouts skipped and one Oura auto-detect deduped
+    # workouts skipped and two duplicates (Strava twin + Oura auto-detect)
+    # merged into the kept Garmin run
     assert job.items_imported == 6
-    assert job.items_total == 9
-    assert job.items_skipped_duplicates == 1
+    assert job.items_total == 10
+    assert job.items_skipped_duplicates == 2
 
     runs = await _fetch_runs(session, isolated_user)
     assert len(runs) == 4
+    assert not any(r.source == DataSource.STRAVA for r in runs.values())
 
     garmin_run = runs[GARMIN_START.isoformat()]
     assert garmin_run.source == DataSource.GARMIN
     assert garmin_run.distance_km == 8.0
     assert garmin_run.duration_seconds == 2400
     assert garmin_run.avg_pace_seconds_per_km == 300.0
-    # same-source HR only: Connect's 150/160 count; the Oura ring's
-    # 120/130 in the same window and the 06:00 reading do not
+    # same-source HR only: Connect's 150/160 count; the Strava twin's 140
+    # and the Oura ring's 120/130, all sharing this window, do not —
+    # dedupe doesn't relax the same-source HR rule
     assert garmin_run.avg_hr == 155
     assert garmin_run.max_hr == 160
-    assert garmin_run.start_lat is None  # Garmin workouts carry no route
+    # Garmin itself carries no route; adopted from the dropped Strava twin
+    assert garmin_run.start_lat == 47.52
+    assert garmin_run.start_lng == 19.06
 
     nike_run = runs[NIKE_START.isoformat()]
     assert nike_run.source == DataSource.APPLE_HEALTH
@@ -212,6 +279,24 @@ async def test_reupload_heals_existing_zero_distance_runs(
         )
     )
     assert result.scalars().all() == []
+
+
+async def test_corrupt_upload_fails_job_not_request(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    """A non-zip (or truncated/corrupt) upload must fail soft: the job
+    records the error, the request itself never 500s."""
+    response = await client.post(
+        "/integrations/apple-health/upload",
+        files={"file": ("export.zip", b"not actually a zip file", "application/zip")},
+    )
+    assert response.status_code == 202
+    job_id = response.json()["job_id"]
+
+    job = await session.get(ImportJob, job_id)
+    assert job.status.value == "failed"
+    assert job.error_message is not None
+    assert len(await _fetch_runs(session, isolated_user)) == 0
 
 
 async def test_upload_job_records_source_and_type(
