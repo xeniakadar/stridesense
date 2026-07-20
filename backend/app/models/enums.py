@@ -29,6 +29,7 @@ class RunTypeSource(StrEnum):
     USER = "user"
     EXTRACTED = "extracted"
     DEFAULT = "default"
+    INFERRED = "inferred"
 
 
 class CyclePhase(StrEnum):

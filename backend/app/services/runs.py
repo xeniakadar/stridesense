@@ -83,6 +83,11 @@ async def update_run(
     for field, value in update_data.items():
         setattr(run, field, value)
 
+    # A manually chosen run_type is a permanent decision — it must never
+    # be silently overwritten by a later classify_runs.py pass.
+    if "run_type" in update_data:
+        run.run_type_source = RunTypeSource.USER
+
     # Re-derive pace if distance or duration changed
     if "distance_km" in update_data or "duration_seconds" in update_data:
         run.avg_pace_seconds_per_km = _compute_pace_seconds_per_km(
