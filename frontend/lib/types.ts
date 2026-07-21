@@ -159,3 +159,10 @@ export interface Insight {
   model: string;
   created_at: string;
 }
+
+export interface GlucoseSample {
+  elapsed_seconds: number;
+  glucose_mg_dl: number;
+  trend: string | null;
+  source: DataSource;
+}
