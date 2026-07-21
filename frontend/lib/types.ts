@@ -160,6 +160,21 @@ export interface Insight {
   created_at: string;
 }
 
+export interface CitedRun {
+  run_id: string;
+  date: string;
+  run_type: RunType;
+  distance_km: number;
+  score: number;
+}
+
+export interface AskAnswer {
+  answer: string;
+  // null when the backend answered without the LLM (no embedded runs)
+  model: string | null;
+  cited_runs: CitedRun[];
+}
+
 export interface GlucoseSample {
   elapsed_seconds: number;
   glucose_mg_dl: number;
