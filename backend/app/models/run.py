@@ -2,6 +2,7 @@ import uuid
 from datetime import date as date_type
 from datetime import datetime
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     DateTime,
     Enum,
@@ -94,6 +95,12 @@ class Run(Base):
     glucose_max_during_run_mg_dl: Mapped[float | None] = mapped_column(Float)
     glucose_post_run_60min_avg_mg_dl: Mapped[float | None] = mapped_column(Float)
     glucose_time_in_range_pct_during_run: Mapped[float | None] = mapped_column(Float)
+
+    # Ask-your-history retrieval: embedding of run_to_text(run), written by
+    # scripts/embed_runs.py. The hash fingerprints the embedded sentence so
+    # the script can tell which runs changed and need re-embedding.
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(384))
+    embedding_text_hash: Mapped[str | None] = mapped_column(String(64))
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

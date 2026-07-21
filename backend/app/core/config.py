@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     backend_cors_origins: str = "http://localhost:3000"
     dev_user_id: UUID
     anthropic_api_key: str = ""
+    # Public-demo hardening: blocks endpoints where visitors could drive
+    # free-form LLM generation (POST /ask).
+    demo_mode: bool = False
     oura_client_id: str = ""
     oura_client_secret: str = ""
 
