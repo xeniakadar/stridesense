@@ -18,6 +18,9 @@ dependencies = [
     "python-multipart>=0.0.29",
     "sentence-transformers>=5.6.0",
     "pgvector>=0.3.6",
+    "sentence-transformers>=5.6.0",
+    "pgvector>=0.3.6",
+    "torch>=2",
 ]
 
 [dependency-groups]
@@ -41,3 +44,11 @@ ignore = ["B008"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
