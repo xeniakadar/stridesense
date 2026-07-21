@@ -1,3 +1,5 @@
+import io
+import zipfile
 from datetime import UTC, date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -5,7 +7,7 @@ from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import GlucoseDailyRecord, ImportJob, Run, RunGlucoseSample, User
+from app.models import GlucoseDailyRecord, ImportJob, Insight, Run, RunGlucoseSample, User
 from app.models.enums import DataSource
 from app.services.apple_health import (
     _merge_duplicate_workouts,
@@ -125,12 +127,45 @@ def test_merge_duplicate_workouts_does_not_chain_unrelated_same_source_runs() ->
 
 
 async def _upload(client: AsyncClient) -> str:
+    return await _upload_bytes(client, FIXTURE.read_bytes())
+
+
+async def _upload_bytes(client: AsyncClient, content: bytes) -> str:
     response = await client.post(
         "/integrations/apple-health/upload",
-        files={"file": ("export.zip", FIXTURE.read_bytes(), "application/zip")},
+        files={"file": ("export.zip", content, "application/zip")},
     )
     assert response.status_code == 202
     return response.json()["job_id"]
+
+
+ONE_WORKOUT_EXTERNAL_ID = "2026-05-01T07:00:00+00:00"
+
+
+def _one_workout_zip(hr_value: int, source_name: str = "Connect") -> bytes:
+    """A minimal export: one Garmin-sourced run, one same-source HR record.
+
+    Kept deliberately separate from the shared FIXTURE — that zip's many
+    workouts and dedupe clusters make it awkward to isolate "exactly one
+    field changed between two imports," which is all these invalidation
+    tests need.
+    """
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<HealthData locale="en_US">
+ <Workout workoutActivityType="HKWorkoutActivityTypeRunning"
+  duration="30" durationUnit="min"
+  totalDistance="5" totalDistanceUnit="km"
+  sourceName="{source_name}"
+  startDate="2026-05-01 07:00:00 +0000" endDate="2026-05-01 07:30:00 +0000"/>
+ <Record type="HKQuantityTypeIdentifierHeartRate" sourceName="{source_name}"
+  unit="count/min" value="{hr_value}"
+  startDate="2026-05-01 07:10:00 +0000" endDate="2026-05-01 07:10:00 +0000"/>
+</HealthData>
+"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("apple_health_export/export.xml", xml)
+    return buf.getvalue()
 
 
 async def _fetch_runs(session: AsyncSession, user: User) -> dict[str, Run]:
@@ -253,6 +288,43 @@ async def test_apple_health_import_end_to_end(
     )
     assert len(result.scalars().all()) == 1
     assert len(await _fetch_dailies(session, isolated_user)) == 1
+
+
+async def test_reimport_with_changed_hr_invalidates_cached_insight(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await _upload_bytes(client, _one_workout_zip(hr_value=150))
+    runs = await _fetch_runs(session, isolated_user)
+    run = runs[ONE_WORKOUT_EXTERNAL_ID]
+    assert run.avg_hr == 150
+
+    session.add(Insight(run_id=run.id, content="stale narration", model="test"))
+    await session.commit()
+
+    # Same run, same window, same distance/duration — only HR moved
+    await _upload_bytes(client, _one_workout_zip(hr_value=160))
+
+    await session.refresh(run)
+    assert run.avg_hr == 160
+    result = await session.execute(select(Insight).where(Insight.run_id == run.id))
+    assert result.scalars().first() is None
+
+
+async def test_reimport_with_no_changes_preserves_cached_insight(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await _upload_bytes(client, _one_workout_zip(hr_value=150))
+    runs = await _fetch_runs(session, isolated_user)
+    run = runs[ONE_WORKOUT_EXTERNAL_ID]
+
+    session.add(Insight(run_id=run.id, content="still valid", model="test"))
+    await session.commit()
+
+    # Byte-identical re-upload: nothing insight-relevant changed
+    await _upload_bytes(client, _one_workout_zip(hr_value=150))
+
+    result = await session.execute(select(Insight).where(Insight.run_id == run.id))
+    assert result.scalars().first() is not None
 
 
 async def test_reupload_heals_existing_zero_distance_runs(

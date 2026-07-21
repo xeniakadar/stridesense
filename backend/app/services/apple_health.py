@@ -44,6 +44,23 @@ MMOL_TO_MGDL = 18.018
 MILES_TO_KM = 1.609344
 ADJACENT_WINDOW = timedelta(minutes=60)
 
+# Run fields upsert_run can change that a cached insight narrates.
+# run_type isn't included here: this import always writes OTHER/DEFAULT,
+# a separate concern from whether the *insight-relevant metrics* moved.
+INSIGHT_RELEVANT_RUN_FIELDS = ("distance_km", "duration_seconds", "avg_hr", "max_hr")
+
+
+def _insight_relevant_changed(existing: Run | None, new_values: dict[str, Any]) -> bool:
+    """True if upserting new_values onto `existing` would change a field
+    a cached insight narrates. A brand-new run (no existing row) never
+    needs invalidation — nothing has been generated for it yet."""
+    if existing is None:
+        return False
+    return any(
+        getattr(existing, field) != new_values[field]
+        for field in INSIGHT_RELEVANT_RUN_FIELDS
+    )
+
 
 def _iter_top_level(zip_path: Path) -> Iterator[Element]:
     """Yield each completed direct child of <HealthData>, keeping memory flat.
@@ -412,34 +429,53 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
             )
             times = [t for t, _, _ in glucose]
 
+            # Pre-upsert snapshot: upsert_run is a raw SQL statement, not
+            # an ORM update, so this is the only way to know whether a
+            # re-import is actually changing anything insight-relevant.
+            pre_result = await session.execute(
+                select(Run).where(
+                    Run.user_id == job.user_id,
+                    Run.external_id.in_(
+                        [w["started_at"].isoformat() for w in workouts]
+                    ),
+                )
+            )
+            existing_by_external_id = {
+                r.external_id: r for r in pre_result.scalars().all()
+            }
+
+            changed_external_ids: set[str] = set()
             for i, workout in enumerate(workouts):
                 # Same-source only: HR from the device that recorded the run
                 hr = hr_by_window.get(i, {}).get(workout["source_name"], [])
                 distance = workout["distance_km"]
-                await upsert_run(
-                    session,
-                    {
-                        "user_id": job.user_id,
-                        "source": _workout_source(workout["source_name"]),
-                        "external_id": workout["started_at"].isoformat(),
-                        "imported_at": datetime.now(UTC),
-                        "date": workout["started_at"].date(),
-                        "started_at": workout["started_at"],
-                        "distance_km": round(distance, 2),
-                        "duration_seconds": workout["duration_seconds"],
-                        "avg_pace_seconds_per_km": round(
-                            workout["duration_seconds"] / distance, 1
-                        ),
-                        "avg_hr": round(mean(hr)) if hr else None,
-                        "max_hr": int(max(hr)) if hr else None,
-                        "start_lat": workout["start_lat"],
-                        "start_lng": workout["start_lng"],
-                        "run_type": RunType.OTHER,
-                        "run_type_source": RunTypeSource.DEFAULT,
-                        "raw_title": None,
-                        "raw_payload": workout["raw"],
-                    },
-                )
+                external_id = workout["started_at"].isoformat()
+                run_values = {
+                    "user_id": job.user_id,
+                    "source": _workout_source(workout["source_name"]),
+                    "external_id": external_id,
+                    "imported_at": datetime.now(UTC),
+                    "date": workout["started_at"].date(),
+                    "started_at": workout["started_at"],
+                    "distance_km": round(distance, 2),
+                    "duration_seconds": workout["duration_seconds"],
+                    "avg_pace_seconds_per_km": round(
+                        workout["duration_seconds"] / distance, 1
+                    ),
+                    "avg_hr": round(mean(hr)) if hr else None,
+                    "max_hr": int(max(hr)) if hr else None,
+                    "start_lat": workout["start_lat"],
+                    "start_lng": workout["start_lng"],
+                    "run_type": RunType.OTHER,
+                    "run_type_source": RunTypeSource.DEFAULT,
+                    "raw_title": None,
+                    "raw_payload": workout["raw"],
+                }
+                if _insight_relevant_changed(
+                    existing_by_external_id.get(external_id), run_values
+                ):
+                    changed_external_ids.add(external_id)
+                await upsert_run(session, run_values)
             await session.commit()
 
             result = await session.execute(
@@ -454,7 +490,10 @@ async def import_apple_health(job_id: UUID, zip_path: Path) -> None:
 
             samples_written = 0
             for workout in workouts:
-                run = runs_by_external_id[workout["started_at"].isoformat()]
+                external_id = workout["started_at"].isoformat()
+                run = runs_by_external_id[external_id]
+                if external_id in changed_external_ids:
+                    await invalidate_insights(session, run.id)
                 start, end = workout["started_at"], workout["ended_at"]
                 during = glucose[bisect_left(times, start) : bisect_right(times, end)]
                 for observed_at, mg_dl, source_name in during:
