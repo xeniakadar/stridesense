@@ -1,4 +1,5 @@
 import type {
+  AskAnswer,
   GlucoseSample,
   ImportJob,
   Insight,
@@ -76,6 +77,12 @@ export const api = {
 
   getGlucoseSamples: (id: string) =>
     request<GlucoseSample[]>(`/runs/${id}/glucose-samples`),
+
+  ask: (question: string) =>
+    request<AskAnswer>("/ask", {
+      method: "POST",
+      body: JSON.stringify({ question }),
+    }),
 
   regenerateInsight: (id: string) =>
     request<Insight>(`/runs/${id}/insight/regenerate`, { method: "POST" }),

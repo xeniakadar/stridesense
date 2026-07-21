@@ -1,6 +1,8 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    # pgvector build of postgres 16 — same on-disk format as postgres:16, the
+    # existing data volume carries over. Needed for the vector extension.
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -34,6 +36,7 @@ services:
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS}
       DEV_USER_ID: ${DEV_USER_ID}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      DEMO_MODE: ${DEMO_MODE:-false}
       OURA_CLIENT_ID: ${OURA_CLIENT_ID:-}
       OURA_CLIENT_SECRET: ${OURA_CLIENT_SECRET:-}
     ports:

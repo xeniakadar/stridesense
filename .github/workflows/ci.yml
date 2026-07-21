@@ -10,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        # pgvector build of postgres 16 — the vector extension migration
+        # needs it (mirrors docker-compose.yml)
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: stridesense
           POSTGRES_PASSWORD: changeme_in_dev

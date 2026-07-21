@@ -42,3 +42,23 @@ class InsightRead(BaseModel):
     content: str
     model: str
     created_at: datetime
+
+
+class AskRequest(BaseModel):
+    question: str
+
+
+class CitedRunRead(BaseModel):
+    run_id: UUID
+    date: date_type
+    run_type: RunType
+    distance_km: float
+    score: float
+
+
+class AskAnswerRead(BaseModel):
+    answer: str
+    # None when the answer was produced without the LLM (e.g. no embedded
+    # runs to retrieve from)
+    model: str | None
+    cited_runs: list[CitedRunRead]

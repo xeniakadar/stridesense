@@ -22,6 +22,16 @@ docker compose exec backend uv run alembic upgrade head
 
 Then open `http://localhost:3000`. You should see two green health checks.
 
+After importing runs (Oura sync, Apple Health upload, weather backfill) or
+re-classifying them (`scripts/classify_runs.py`), refresh the ask-your-history
+embeddings — the script hashes each run's rendered sentence, so it re-embeds
+only runs whose data actually changed:
+
+```bash
+docker compose exec backend uv run python -m scripts.embed_runs          # dry run
+docker compose exec backend uv run python -m scripts.embed_runs --apply
+```
+
 ## Repo layout
 
 ```

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { AskSection } from "@/components/AskSection";
 import { PaceTrendChart } from "@/components/charts/PaceTrendChart";
 import { RunTypeDistributionChart } from "@/components/charts/RunTypeDistributionChart";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
@@ -37,6 +38,8 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-medium">Dashboard</h1>
+
+      <AskSection />
 
       <ChartCard
         title="Weekly mileage"
