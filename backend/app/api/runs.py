@@ -1,10 +1,12 @@
-from uuid import UUID
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
+from app.core.config import get_settings
 from app.models import Insight, Run, RunGlucoseSample
 from app.schemas.analytics import GlucoseSampleRead, InsightRead, SimilarRunRead
 from app.schemas.run import RunCreate, RunRead, RunUpdate
@@ -166,6 +168,21 @@ async def get_insight_endpoint(
     cached = existing.scalars().first()
     if cached:
         return InsightRead.model_validate(cached)
+
+    if get_settings().demo_mode:
+        # Demo never generates on demand — insights are pre-generated at
+        # deploy time by scripts/pregenerate_insights.py. A run without one
+        # gets a friendly explanation instead of an LLM call (not persisted).
+        return InsightRead(
+            id=uuid4(),
+            run_id=run_id,
+            content=(
+                "Insights in this demo are pre-generated, and this run "
+                "doesn't have one yet."
+            ),
+            model="demo",
+            created_at=datetime.now(UTC),
+        )
 
     insight = await _generate_and_cache_insight(session, user_id, run, run_id)
     return InsightRead.model_validate(insight)
