@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
 import { api, ApiError } from "@/lib/api";
 import {
   formatDate,
@@ -161,6 +162,7 @@ export default function RunDetailPage() {
 
       {hasGlucose && (
         <Section title="Glucose">
+          <GlucoseCurveChart runId={run.id} />
           <StatGrid>
             <Stat
               label="Pre-run (60min avg)"

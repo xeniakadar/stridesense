@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
-from app.models import Insight, Run
-from app.schemas.analytics import InsightRead, SimilarRunRead
+from app.models import Insight, Run, RunGlucoseSample
+from app.schemas.analytics import GlucoseSampleRead, InsightRead, SimilarRunRead
 from app.schemas.run import RunCreate, RunRead, RunUpdate
 from app.services import (
     RunNotFoundError,
@@ -81,6 +81,25 @@ async def get_similar_runs_endpoint(
         )
         for s in similar
     ]
+
+@router.get("/{run_id}/glucose-samples", response_model=list[GlucoseSampleRead])
+async def get_glucose_samples_endpoint(
+    run_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[GlucoseSampleRead]:
+    try:
+        await get_run(session, user_id, run_id)
+    except RunNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+
+    result = await session.execute(
+        select(RunGlucoseSample)
+        .where(RunGlucoseSample.run_id == run_id)
+        .order_by(RunGlucoseSample.elapsed_seconds)
+    )
+    return [GlucoseSampleRead.model_validate(s) for s in result.scalars().all()]
+
 
 @router.put("/{run_id}", response_model=RunRead)
 async def update_run_endpoint(

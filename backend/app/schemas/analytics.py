@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.enums import RunType
+from app.models.enums import DataSource, RunType
 
 
 class SimilarRunRead(BaseModel):
@@ -24,6 +24,15 @@ class LoadPointRead(BaseModel):
     chronic_load: float
     acwr: float | None
     zone: str
+
+class GlucoseSampleRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    elapsed_seconds: int
+    glucose_mg_dl: float
+    trend: str | None
+    source: DataSource
+
 
 class InsightRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

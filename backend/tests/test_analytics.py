@@ -1,8 +1,12 @@
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from unittest.mock import AsyncMock, patch
+from uuid import uuid4
 
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models import RunGlucoseSample
+from app.models.enums import DataSource
 from app.services.training_load import _zone
 
 
@@ -41,6 +45,74 @@ async def test_similar_runs_endpoint_shape(client: AsyncClient, isolated_user) -
     for item in body:
         assert 0.0 <= item["score"] <= 1.0
         assert item["run_id"] != target["id"]
+
+
+async def test_glucose_samples_endpoint_shape_and_order(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    created = (
+        await client.post("/runs", json=_run_payload(date(2026, 6, 5)))
+    ).json()
+    run_id = created["id"]
+    started_at = datetime(2026, 6, 5, 7, 0, tzinfo=UTC)
+
+    # Inserted out of order — the endpoint must sort by elapsed_seconds
+    session.add_all(
+        [
+            RunGlucoseSample(
+                run_id=run_id,
+                elapsed_seconds=600,
+                observed_at=started_at + timedelta(seconds=600),
+                glucose_mg_dl=110.0,
+                trend="rising",
+                source=DataSource.LINX_CGM,
+            ),
+            RunGlucoseSample(
+                run_id=run_id,
+                elapsed_seconds=0,
+                observed_at=started_at,
+                glucose_mg_dl=95.0,
+                trend=None,
+                source=DataSource.LINX_CGM,
+            ),
+        ]
+    )
+    await session.commit()
+
+    res = await client.get(f"/runs/{run_id}/glucose-samples")
+    assert res.status_code == 200
+    body = res.json()
+    assert body == [
+        {
+            "elapsed_seconds": 0,
+            "glucose_mg_dl": 95.0,
+            "trend": None,
+            "source": "linx_cgm",
+        },
+        {
+            "elapsed_seconds": 600,
+            "glucose_mg_dl": 110.0,
+            "trend": "rising",
+            "source": "linx_cgm",
+        },
+    ]
+
+
+async def test_glucose_samples_endpoint_empty(
+    client: AsyncClient, isolated_user
+) -> None:
+    created = (
+        await client.post("/runs", json=_run_payload(date(2026, 6, 6)))
+    ).json()
+
+    res = await client.get(f"/runs/{created['id']}/glucose-samples")
+    assert res.status_code == 200
+    assert res.json() == []
+
+
+async def test_glucose_samples_endpoint_not_found(client: AsyncClient, isolated_user) -> None:
+    res = await client.get(f"/runs/{uuid4()}/glucose-samples")
+    assert res.status_code == 404
 
 
 async def test_training_load_endpoint(client: AsyncClient, isolated_user) -> None:

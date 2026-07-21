@@ -1,4 +1,5 @@
 import type {
+  GlucoseSample,
   ImportJob,
   Insight,
   JobAccepted,
@@ -72,6 +73,9 @@ export const api = {
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
 
   getInsight: (id: string) => request<Insight>(`/runs/${id}/insight`),
+
+  getGlucoseSamples: (id: string) =>
+    request<GlucoseSample[]>(`/runs/${id}/glucose-samples`),
 
   regenerateInsight: (id: string) =>
     request<Insight>(`/runs/${id}/insight/regenerate`, { method: "POST" }),
