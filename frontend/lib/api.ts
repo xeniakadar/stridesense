@@ -1,4 +1,5 @@
 import type {
+  AppConfig,
   AskAnswer,
   GlucoseSample,
   ImportJob,
@@ -52,6 +53,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  getConfig: () => request<AppConfig>("/config"),
+
   listRuns: () => request<Run[]>("/runs"),
   getRun: (id: string) => request<Run>(`/runs/${id}`),
   createRun: (data: RunCreate) =>
@@ -77,6 +80,8 @@ export const api = {
 
   getGlucoseSamples: (id: string) =>
     request<GlucoseSample[]>(`/runs/${id}/glucose-samples`),
+
+  getDemoQuestions: () => request<string[]>("/ask/demo-questions"),
 
   ask: (question: string) =>
     request<AskAnswer>("/ask", {

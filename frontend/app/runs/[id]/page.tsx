@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
 import { api, ApiError } from "@/lib/api";
 import {
@@ -19,6 +20,7 @@ import type { Run, SimilarRun } from "@/lib/types";
 export default function RunDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const demoMode = useDemoMode();
   const [run, setRun] = useState<Run | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -63,21 +65,23 @@ export default function RunDetailPage() {
             {run.run_type} run
           </h1>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/runs/${run.id}/edit`}
-            className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
-          >
-            {deleting ? "Deleting…" : "Delete"}
-          </button>
-        </div>
+        {!demoMode && (
+          <div className="flex gap-2">
+            <Link
+              href={`/runs/${run.id}/edit`}
+              className="px-3 py-1.5 text-sm rounded border border-gray-300 hover:bg-gray-50"
+            >
+              Edit
+            </Link>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              {deleting ? "Deleting…" : "Delete"}
+            </button>
+          </div>
+        )}
       </div>
       <InsightSection runId={run.id} />
       <Section title="Summary">
@@ -240,6 +244,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function InsightSection({ runId }: { runId: string }) {
+  const demoMode = useDemoMode();
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
@@ -277,7 +282,7 @@ function InsightSection({ runId }: { runId: string }) {
         <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
           Insight
         </h2>
-        {!loading && (
+        {!loading && !demoMode && (
           <button
             onClick={handleRegenerate}
             disabled={regenerating}

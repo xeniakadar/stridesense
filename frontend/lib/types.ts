@@ -160,6 +160,10 @@ export interface Insight {
   created_at: string;
 }
 
+export interface AppConfig {
+  demo_mode: boolean;
+}
+
 export interface CitedRun {
   run_id: string;
   date: string;

@@ -1,3 +1,4 @@
+from app.models.ask_demo import AskDemoAnswer
 from app.models.glucose import GlucoseDailyRecord, RunGlucoseSample
 from app.models.import_job import ImportJob
 from app.models.insight import Insight
@@ -18,5 +19,6 @@ __all__ = [
     "RunGlucoseSample",
     "OAuthConnection",
     "ImportJob",
-    "Insight"
+    "Insight",
+    "AskDemoAnswer",
 ]
