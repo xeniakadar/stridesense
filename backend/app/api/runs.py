@@ -8,7 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_current_user_id, get_session
 from app.core.config import get_settings
 from app.models import Insight, Run, RunGlucoseSample
-from app.schemas.analytics import GlucoseSampleRead, InsightRead, SimilarRunRead
+from app.schemas.analytics import (
+    ComparisonRead,
+    GlucoseSampleRead,
+    InsightRead,
+    SimilarRunRead,
+    SimilarRunsRead,
+)
 from app.schemas.run import RunCreate, RunRead, RunUpdate
 from app.services import (
     RunNotFoundError,
@@ -24,7 +30,11 @@ from app.services.insights import (
     generate_insight,
     invalidate_insights,
 )
-from app.services.similarity import find_similar_runs
+from app.services.similarity import (
+    compare_to_similar,
+    find_similar_runs,
+    find_similar_runs_detailed,
+)
 from app.services.training_load import acwr_for_run
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -62,27 +72,34 @@ async def get_run_endpoint(
     return RunRead.model_validate(run)
 
 
-@router.get("/{run_id}/similar", response_model=list[SimilarRunRead])
+@router.get("/{run_id}/similar", response_model=SimilarRunsRead)
 async def get_similar_runs_endpoint(
     run_id: UUID,
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
     limit: int = 5,
-) -> list[SimilarRunRead]:
+) -> SimilarRunsRead:
     target = await get_run(session, user_id, run_id)
     candidates = await list_runs(session, user_id, limit=500)
-    similar = find_similar_runs(target, candidates, limit=limit)
-    return [
-        SimilarRunRead(
-            run_id=s.run.id,
-            date=s.run.date,
-            run_type=s.run.run_type,
-            distance_km=s.run.distance_km,
-            avg_pace_seconds_per_km=s.run.avg_pace_seconds_per_km,
-            score=round(s.score, 3),
-        )
-        for s in similar
-    ]
+    pool = find_similar_runs_detailed(target, candidates, limit=limit)
+    comparison = compare_to_similar(target, pool.runs)
+    return SimilarRunsRead(
+        runs=[
+            SimilarRunRead(
+                run_id=s.run.id,
+                date=s.run.date,
+                run_type=s.run.run_type,
+                distance_km=s.run.distance_km,
+                avg_pace_seconds_per_km=s.run.avg_pace_seconds_per_km,
+                weather_temp_start_c=s.run.weather_temp_start_c,
+                score=round(s.score, 3),
+            )
+            for s in pool.runs
+        ],
+        pool_size=pool.pool_size,
+        type_fallback=pool.type_fallback,
+        comparison=ComparisonRead(**vars(comparison)) if comparison else None,
+    )
 
 @router.get("/{run_id}/glucose-samples", response_model=list[GlucoseSampleRead])
 async def get_glucose_samples_endpoint(

@@ -108,7 +108,24 @@ export interface SimilarRun {
   run_type: RunType;
   distance_km: number;
   avg_pace_seconds_per_km: number | null;
+  weather_temp_start_c: number | null;
   score: number;
+}
+
+// This run minus the median of its comparables; null when either side
+// lacks the metric. Negative pace/HR = faster/lower.
+export interface Comparison {
+  pace_delta_seconds_per_km: number | null;
+  avg_hr_delta: number | null;
+  weather_temp_delta_c: number | null;
+  glucose_delta_mg_dl: number | null;
+}
+
+export interface SimilarRunsResponse {
+  runs: SimilarRun[];
+  pool_size: number;
+  type_fallback: boolean;
+  comparison: Comparison | null;
 }
 
 export interface LoadPoint {

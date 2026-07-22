@@ -15,7 +15,25 @@ class SimilarRunRead(BaseModel):
     run_type: RunType
     distance_km: float
     avg_pace_seconds_per_km: float | None
+    weather_temp_start_c: float | None
     score: float
+
+
+class ComparisonRead(BaseModel):
+    """This run minus the median of its comparables; None when either side
+    lacks the metric. Negative pace/HR = faster/lower."""
+
+    pace_delta_seconds_per_km: float | None
+    avg_hr_delta: float | None
+    weather_temp_delta_c: float | None
+    glucose_delta_mg_dl: float | None
+
+
+class SimilarRunsRead(BaseModel):
+    runs: list[SimilarRunRead]
+    pool_size: int
+    type_fallback: bool
+    comparison: ComparisonRead | None
 
 
 class LoadPointRead(BaseModel):

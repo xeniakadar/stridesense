@@ -40,9 +40,8 @@ async def test_similar_runs_endpoint_shape(client: AsyncClient, isolated_user) -
     res = await client.get(f"/runs/{target['id']}/similar")
     assert res.status_code == 200
     body = res.json()
-    assert isinstance(body, list)
-    assert len(body) == 1  # the only other run for this isolated user
-    for item in body:
+    assert len(body["runs"]) == 1  # the only other run for this isolated user
+    for item in body["runs"]:
         assert 0.0 <= item["score"] <= 1.0
         assert item["run_id"] != target["id"]
 
