@@ -343,7 +343,7 @@ function SimilarRunsSection({ runId }: { runId: string }) {
   useEffect(() => {
     api
       .getSimilarRuns(runId)
-      .then(setRuns)
+      .then((res) => setRuns(res.runs))
       .catch(() => setRuns([]));
   }, [runId]);
 
@@ -351,9 +351,15 @@ function SimilarRunsSection({ runId }: { runId: string }) {
 
   return (
     <section>
-      <p className="text-[13px] font-medium text-ink mb-2 mt-1 px-1">
-        Comparable runs
-      </p>
+      <div className="flex justify-between items-baseline mb-2 mt-1 px-1">
+        <p className="text-[13px] font-medium text-ink">Comparable runs</p>
+        <Link
+          href={`/runs/${runId}/compare`}
+          className="text-[11px] font-medium text-leaf hover:underline"
+        >
+          Compare →
+        </Link>
+      </div>
       <div className="space-y-1.5">
         {runs.map((r) => (
           <Link

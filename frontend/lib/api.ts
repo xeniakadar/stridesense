@@ -13,7 +13,7 @@ import type {
   PaceTrendPoint,
   RunTypeDistributionItem,
   LoadPoint,
-  SimilarRun,
+  SimilarRunsResponse,
 } from "@/lib/types";
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
@@ -73,7 +73,8 @@ export const api = {
   runTypeDistribution: () =>
     request<RunTypeDistributionItem[]>("/analytics/run-type-distribution"),
 
-  getSimilarRuns: (id: string) => request<SimilarRun[]>(`/runs/${id}/similar`),
+  getSimilarRuns: (id: string) =>
+    request<SimilarRunsResponse>(`/runs/${id}/similar`),
 
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
 
