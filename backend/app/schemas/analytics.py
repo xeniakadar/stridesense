@@ -44,6 +44,16 @@ class InsightRead(BaseModel):
     created_at: datetime
 
 
+class DailyBriefRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: date_type
+    content: str
+    # None when the brief was produced without the LLM (no data yet)
+    model: str | None
+    created_at: datetime
+
+
 class AskRequest(BaseModel):
     question: str
 

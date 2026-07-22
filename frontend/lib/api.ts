@@ -1,6 +1,7 @@
 import type {
   AppConfig,
   AskAnswer,
+  DailyBrief,
   GlucoseSample,
   ImportJob,
   Insight,
@@ -80,6 +81,8 @@ export const api = {
 
   getGlucoseSamples: (id: string) =>
     request<GlucoseSample[]>(`/runs/${id}/glucose-samples`),
+
+  getDailyBrief: () => request<DailyBrief>("/daily-brief"),
 
   getDemoQuestions: () => request<string[]>("/ask/demo-questions"),
 

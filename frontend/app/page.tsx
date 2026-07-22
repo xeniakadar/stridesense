@@ -3,30 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { AskSection } from "@/components/AskSection";
-import { PaceTrendChart } from "@/components/charts/PaceTrendChart";
-import { RunTypeDistributionChart } from "@/components/charts/RunTypeDistributionChart";
+import { DailyOverview } from "@/components/DailyOverview";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
-import {
-  cityFromLat,
-  formatDate,
-  RUN_TYPE_LABELS,
-} from "@/lib/format";
-import type {
-  LoadPoint,
-  PaceTrendPoint,
-  Run,
-  RunTypeDistributionItem,
-  WeeklyMileagePoint,
-} from "@/lib/types";
+import { cityFromLat, formatDate, RUN_TYPE_LABELS } from "@/lib/format";
+import type { LoadPoint, Run, WeeklyMileagePoint } from "@/lib/types";
 
 export default function DashboardPage() {
   const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
-  const [pace, setPace] = useState<PaceTrendPoint[] | null>(null);
-  const [distribution, setDistribution] = useState<
-    RunTypeDistributionItem[] | null
-  >(null);
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [load, setLoad] = useState<LoadPoint | null>(null);
 
@@ -35,14 +19,6 @@ export default function DashboardPage() {
       .weeklyMileage()
       .then(setMileage)
       .catch(() => setMileage([]));
-    api
-      .paceTrend()
-      .then(setPace)
-      .catch(() => setPace([]));
-    api
-      .runTypeDistribution()
-      .then(setDistribution)
-      .catch(() => setDistribution([]));
     api
       .listRuns()
       .then(setRuns)
@@ -65,12 +41,15 @@ export default function DashboardPage() {
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
       <div className="hero-gradient rounded-3xl px-5 pt-6 pb-5">
-        <p className="text-[13px] text-clay">{greeting()}</p>
+        <p className="text-[13px] text-clay">Hi Xenia</p>
         <p className="mt-2 text-4xl font-medium text-ink leading-tight">
           {thisWeek ? `${thisWeek.distance_km.toFixed(1)} km` : "— km"}
         </p>
         <p className="mt-0.5 mb-3 text-xs text-clay">
-          this week{runsThisWeek !== null ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}` : ""}
+          this week
+          {runsThisWeek !== null
+            ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
+            : ""}
         </p>
         {load?.acwr != null && (
           <span className="inline-flex items-center gap-1.5 bg-white/55 px-2.5 py-1 rounded-full">
@@ -82,29 +61,21 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <ChartCard
-        id="trends"
-        title="Weekly mileage"
-        subtitle="last 12 weeks"
-      >
-        {mileage ? <WeeklyMileageChart data={mileage} /> : <Loading />}
-      </ChartCard>
-
-      <section id="ask" className="scroll-mt-16">
-        <AskSection />
-      </section>
-
-      <ChartCard title="Easy-run pace trend" subtitle="last 90 days">
-        {pace ? <PaceTrendChart data={pace} /> : <Loading />}
-      </ChartCard>
-
-      <ChartCard title="Run types" subtitle="last 30 days">
-        {distribution ? (
-          <RunTypeDistributionChart data={distribution} />
+      <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
+        <div className="mb-3 flex justify-between items-baseline">
+          <h2 className="text-[13px] font-medium text-ink">Weekly distance</h2>
+          <p className="text-[11px] text-sand">last 12 weeks</p>
+        </div>
+        {mileage ? (
+          <WeeklyMileageChart data={mileage} />
         ) : (
-          <Loading />
+          <div className="h-[200px] flex items-center justify-center text-sm text-sand">
+            Loading…
+          </div>
         )}
-      </ChartCard>
+      </div>
+
+      <DailyOverview />
 
       {recent.length > 0 && (
         <section>
@@ -137,46 +108,6 @@ export default function DashboardPage() {
           </div>
         </section>
       )}
-    </div>
-  );
-}
-
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-function ChartCard({
-  id,
-  title,
-  subtitle,
-  children,
-}: {
-  id?: string;
-  title: string;
-  subtitle: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      id={id}
-      className="bg-white border-[0.5px] border-line rounded-2xl p-4 scroll-mt-16"
-    >
-      <div className="mb-3 flex justify-between items-baseline">
-        <h2 className="text-[13px] font-medium text-ink">{title}</h2>
-        <p className="text-[11px] text-sand">{subtitle}</p>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Loading() {
-  return (
-    <div className="h-[200px] flex items-center justify-center text-sm text-sand">
-      Loading…
     </div>
   );
 }

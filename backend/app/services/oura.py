@@ -23,6 +23,7 @@ from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal
 from app.models import ImportJob, OAuthConnection
 from app.models.enums import DataSource, ImportJobStatus, OAuthProvider
+from app.services.daily_brief import invalidate_daily_briefs
 from app.services.ingest import finish_job, upsert_sleep_record
 
 OURA_BASE_URL = "https://api.ouraring.com/v2/usercollection"
@@ -300,4 +301,10 @@ async def sync_oura(job_id: UUID, start_date: date, end_date: date) -> None:
 async def _upsert_all(session: AsyncSession, records: list[dict[str, Any]]) -> None:
     for values in records:
         await upsert_sleep_record(session, values)
+    if records:
+        # Fresh sleep data changes what the morning brief should say —
+        # drop the cached briefs for exactly the synced days.
+        await invalidate_daily_briefs(
+            session, records[0]["user_id"], [r["date"] for r in records]
+        )
     await session.commit()

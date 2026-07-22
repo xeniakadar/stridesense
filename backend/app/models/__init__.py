@@ -1,4 +1,5 @@
 from app.models.ask_demo import AskDemoAnswer
+from app.models.daily_brief import DailyBrief
 from app.models.glucose import GlucoseDailyRecord, RunGlucoseSample
 from app.models.import_job import ImportJob
 from app.models.insight import Insight
@@ -21,4 +22,5 @@ __all__ = [
     "ImportJob",
     "Insight",
     "AskDemoAnswer",
+    "DailyBrief",
 ]
