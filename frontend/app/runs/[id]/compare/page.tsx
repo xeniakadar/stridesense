@@ -287,9 +287,29 @@ function PaceLineChart({
   // point clips at the chart edge, so hang it to the left there
   const targetIsLast = target === rows.at(-1);
 
+  // Dots are the runs; the line is only the pattern through them — a
+  // least-squares fit by date, not a point-to-point connection
+  const data: { ts: number; pace: number; trend?: number }[] = rows;
+  if (rows.length >= 2) {
+    const n = rows.length;
+    const meanTs = rows.reduce((sum, r) => sum + r.ts, 0) / n;
+    const meanPace = rows.reduce((sum, r) => sum + r.pace, 0) / n;
+    const denom = rows.reduce((sum, r) => sum + (r.ts - meanTs) ** 2, 0);
+    const slope =
+      denom === 0
+        ? 0
+        : rows.reduce(
+            (sum, r) => sum + (r.ts - meanTs) * (r.pace - meanPace),
+            0
+          ) / denom;
+    for (const row of data) {
+      row.trend = meanPace + slope * (row.ts - meanTs);
+    }
+  }
+
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <LineChart data={rows} margin={{ top: 18, right: 14, bottom: 4, left: 0 }}>
+      <LineChart data={data} margin={{ top: 18, right: 14, bottom: 4, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
         <XAxis
           dataKey="ts"
@@ -320,10 +340,17 @@ function PaceLineChart({
           formatter={(value) => [formatPace(Number(value)), "Pace"]}
         />
         <Line
-          type="monotone"
-          dataKey="pace"
+          dataKey="trend"
           stroke={LEAF_MID}
           strokeWidth={2}
+          strokeDasharray="6 4"
+          dot={false}
+          activeDot={false}
+          tooltipType="none"
+        />
+        <Line
+          dataKey="pace"
+          stroke="none"
           dot={{ r: 4, fill: "#fff", stroke: LEAF_MID, strokeWidth: 2 }}
           activeDot={{ r: 5, fill: LEAF_MID, stroke: "#fff", strokeWidth: 2 }}
         />
