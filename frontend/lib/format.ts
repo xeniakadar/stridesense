@@ -36,6 +36,11 @@ export function formatDateShort(iso: string): string {
   return format(parseISO(iso), "MMM d");
 }
 
+// For axes whose points can be years apart (e.g. comparable runs)
+export function formatMonthYear(iso: string): string {
+  return format(parseISO(iso), "MMM ''yy");
+}
+
 export function formatGlucose(mgDl: number | null | undefined): string {
   if (mgDl === null || mgDl === undefined) return "—";
   return `${Math.round(mgDl)} mg/dL`;
