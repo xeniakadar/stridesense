@@ -124,11 +124,16 @@ export default function RunDetailPage() {
 
       {hasGlucose && (
         <Card>
-          <p className="text-[13px] font-medium text-ink mb-2.5">
-            Glucose
-            {run.glucose_time_in_range_pct_during_run !== null &&
-              ` · time in range ${formatTimeInRange(run.glucose_time_in_range_pct_during_run)}`}
-          </p>
+          <div className="flex justify-between items-baseline mb-2.5">
+            <p className="text-[13px] font-medium text-ink">
+              Glucose
+              {run.glucose_time_in_range_pct_during_run !== null &&
+                ` · time in range ${formatTimeInRange(run.glucose_time_in_range_pct_during_run)}`}
+            </p>
+            {demoMode && (
+              <span className="text-[10px] text-sand">glucose simulated</span>
+            )}
+          </div>
           <GlucoseCurveChart runId={run.id} />
           <StatGrid>
             <Stat
