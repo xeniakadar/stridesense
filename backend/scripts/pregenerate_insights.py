@@ -1,7 +1,8 @@
-"""Pre-generate and cache an insight for every run — the demo-mode deploy step.
+"""Pre-generate and cache an insight per run plus today's daily brief.
 
-Demo mode never generates insights on demand (the GET endpoint serves cached
-rows only), so a demo deployment runs this once after seeding data, e.g.:
+Demo mode never generates on demand (the insight GET serves cached rows
+only; /daily-brief serves the newest pre-generated brief), so a demo
+deployment runs this once after seeding data, e.g.:
 
     docker compose exec backend uv run python -m scripts.embed_runs --apply
     docker compose exec backend uv run python -m scripts.pregenerate_insights
@@ -14,13 +15,19 @@ take a while on a full dataset.
 """
 
 import asyncio
+from datetime import date
 
 from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.db.session import AsyncSessionLocal
-from app.models import Insight
+from app.models import DailyBrief, Insight
 from app.services import list_runs
+from app.services.daily_brief import (
+    DAILY_BRIEF_MODEL,
+    gather_daily_data,
+    generate_daily_brief,
+)
 from app.services.insights import (
     INSIGHT_MODEL,
     InsightUnavailableError,
@@ -28,6 +35,31 @@ from app.services.insights import (
 )
 from app.services.similarity import find_similar_runs
 from app.services.training_load import acwr_for_run
+
+
+async def pregenerate_daily_brief(session, user_id) -> None:
+    """Today's brief, so the demo has one to serve (skips if it exists)."""
+    today = date.today()
+    existing = await session.execute(
+        select(DailyBrief).where(
+            DailyBrief.user_id == user_id, DailyBrief.date == today
+        )
+    )
+    if existing.scalar_one_or_none():
+        print("Daily brief for today already cached.")
+        return
+    data = await gather_daily_data(session, user_id, today)
+    if not data.has_anything():
+        print("No data for a daily brief — skipped.")
+        return
+    content = await generate_daily_brief(data, today)
+    session.add(
+        DailyBrief(
+            user_id=user_id, date=today, content=content, model=DAILY_BRIEF_MODEL
+        )
+    )
+    await session.commit()
+    print("Daily brief generated and cached.")
 
 
 async def main() -> None:
@@ -44,7 +76,8 @@ async def main() -> None:
             f"{len(targets)} to generate"
         )
         if not targets:
-            print("Nothing to do.")
+            print("All insights already cached.")
+            await pregenerate_daily_brief(session, user_id)
             return
 
         for i, run in enumerate(targets, start=1):
@@ -61,6 +94,7 @@ async def main() -> None:
             print(f"[{i}/{len(targets)}] {run.date.isoformat()} {run.run_type.value}")
 
         print(f"\nDone: {len(targets)} insights generated and cached.")
+        await pregenerate_daily_brief(session, user_id)
 
 
 if __name__ == "__main__":
