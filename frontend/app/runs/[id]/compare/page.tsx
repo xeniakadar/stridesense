@@ -4,12 +4,30 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceDot,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { api, ApiError } from "@/lib/api";
 import {
+  LEAF_BRIGHT,
+  LEAF_MID,
+  LEAF_SOFT,
+  LINE,
+  SAND,
+  TOOLTIP_STYLE,
+} from "@/lib/colors";
+import {
   cityFromLat,
   formatDate,
-  formatDateShort,
+  formatMonthYear,
   formatPace,
 } from "@/lib/format";
 import type { Comparison, Run, SimilarRunsResponse } from "@/lib/types";
@@ -88,9 +106,9 @@ export default function CompareRunPage() {
 
           <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
             <p className="text-[13px] font-medium text-ink mb-2.5">
-              Pace, this run vs each
+              Pace over time, this run highlighted
             </p>
-            <PaceBars run={run} similar={similar} />
+            <PaceLineChart run={run} similar={similar} />
           </div>
 
           <section>
@@ -240,19 +258,20 @@ function interpret(comparison: Comparison, runType: string): string {
   return `Right in line with ${typical}.`;
 }
 
-function PaceBars({
+/** Pace by date across the comparables and this run — one connected line
+ * (it's all the same runner over time), with this run's point emphasized
+ * in solid leaf. Y axis is reversed so faster sits higher. */
+function PaceLineChart({
   run,
   similar,
 }: {
   run: Run;
   similar: SimilarRunsResponse;
 }) {
-  const rows: { key: string; label: string; pace: number; isTarget: boolean }[] =
-    [];
+  const rows: { ts: number; pace: number; isTarget: boolean }[] = [];
   if (run.avg_pace_seconds_per_km) {
     rows.push({
-      key: "target",
-      label: "this run",
+      ts: new Date(run.date).getTime(),
       pace: run.avg_pace_seconds_per_km,
       isTarget: true,
     });
@@ -260,8 +279,7 @@ function PaceBars({
   for (const s of similar.runs) {
     if (s.avg_pace_seconds_per_km) {
       rows.push({
-        key: s.run_id,
-        label: formatDateShort(s.date),
+        ts: new Date(s.date).getTime(),
         pace: s.avg_pace_seconds_per_km,
         isTarget: false,
       });
@@ -270,38 +288,89 @@ function PaceBars({
   if (rows.length === 0) {
     return <p className="text-xs text-sand">No pace data to compare.</p>;
   }
+  rows.sort((a, b) => a.ts - b.ts);
+  const target = rows.find((r) => r.isTarget);
 
-  const paces = rows.map((r) => r.pace);
-  const min = Math.min(...paces);
-  const max = Math.max(...paces);
-  // Longer bar = slower pace; keep every bar visible and differences legible
-  const width = (pace: number) =>
-    max === min ? 62 : 40 + (55 * (pace - min)) / (max - min);
+  // Dots are the runs; the line is only the pattern through them — a
+  // least-squares fit by date, not a point-to-point connection
+  const data: { ts: number; pace: number; trend?: number }[] = rows;
+  if (rows.length >= 2) {
+    const n = rows.length;
+    const meanTs = rows.reduce((sum, r) => sum + r.ts, 0) / n;
+    const meanPace = rows.reduce((sum, r) => sum + r.pace, 0) / n;
+    const denom = rows.reduce((sum, r) => sum + (r.ts - meanTs) ** 2, 0);
+    const slope =
+      denom === 0
+        ? 0
+        : rows.reduce(
+            (sum, r) => sum + (r.ts - meanTs) * (r.pace - meanPace),
+            0
+          ) / denom;
+    for (const row of data) {
+      row.trend = meanPace + slope * (row.ts - meanTs);
+    }
+  }
 
   return (
-    <div className="space-y-1.5">
-      {rows.map((r) => (
-        <div key={r.key} className="flex items-center gap-2">
-          <span
-            className={`w-12 shrink-0 text-[10px] ${
-              r.isTarget ? "text-leaf font-medium" : "text-sand"
-            }`}
-          >
-            {r.label}
-          </span>
-          <div
-            className={`h-[9px] rounded-[5px] ${
-              r.isTarget ? "bg-leaf" : "bg-leaf-soft"
-            }`}
-            style={{ width: `${width(r.pace)}%` }}
+    <ResponsiveContainer width="100%" height={200}>
+      <LineChart data={data} margin={{ top: 18, right: 14, bottom: 4, left: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
+        <XAxis
+          dataKey="ts"
+          type="number"
+          scale="time"
+          domain={["dataMin", "dataMax"]}
+          tickFormatter={(ts: number) =>
+            formatMonthYear(new Date(ts).toISOString())
+          }
+          tick={{ fontSize: 11, fill: SAND }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tickFormatter={(v: number) => formatPace(v).replace("/km", "")}
+          tick={{ fontSize: 11, fill: SAND }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
+          reversed
+          domain={["dataMin - 10", "dataMax + 10"]}
+        />
+        <Tooltip
+          {...TOOLTIP_STYLE}
+          labelFormatter={(ts) =>
+            formatDate(new Date(Number(ts)).toISOString())
+          }
+          formatter={(value) => [formatPace(Number(value)), "Pace"]}
+        />
+        <Line
+          dataKey="trend"
+          stroke={LEAF_SOFT}
+          strokeWidth={2}
+          strokeDasharray="6 4"
+          dot={false}
+          activeDot={false}
+          tooltipType="none"
+        />
+        <Line
+          dataKey="pace"
+          stroke="none"
+          dot={{ r: 4, fill: "#fff", stroke: LEAF_MID, strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: LEAF_MID, stroke: "#fff", strokeWidth: 2 }}
+        />
+        {target && (
+          // This run: solid and a notch brighter than the hollow
+          // leaf-mid comparables — no text label needed
+          <ReferenceDot
+            x={target.ts}
+            y={target.pace}
+            r={5.5}
+            fill={LEAF_BRIGHT}
+            stroke="#fff"
+            strokeWidth={2}
           />
-          <span
-            className={`text-[10px] ${r.isTarget ? "text-ink" : "text-sand"}`}
-          >
-            {formatPace(r.pace).replace("/km", "")}
-          </span>
-        </div>
-      ))}
-    </div>
+        )}
+      </LineChart>
+    </ResponsiveContainer>
   );
 }

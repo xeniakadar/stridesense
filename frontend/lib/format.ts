@@ -4,8 +4,10 @@ export function formatPace(secondsPerKm: number | null | undefined): string {
   if (secondsPerKm == null || !isFinite(secondsPerKm) || secondsPerKm <= 0) {
     return "—";
   }
-  const minutes = Math.floor(secondsPerKm / 60);
-  const seconds = Math.round(secondsPerKm % 60);
+  // Round the total first so e.g. 419.6s renders 7:00, not 6:60
+  const total = Math.round(secondsPerKm);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
   return `${minutes}:${seconds.toString().padStart(2, "0")}/km`;
 }
 
@@ -34,6 +36,11 @@ export function formatDate(iso: string): string {
 
 export function formatDateShort(iso: string): string {
   return format(parseISO(iso), "MMM d");
+}
+
+// For axes whose points can be years apart (e.g. comparable runs)
+export function formatMonthYear(iso: string): string {
+  return format(parseISO(iso), "MMM ''yy");
 }
 
 export function formatGlucose(mgDl: number | null | undefined): string {
