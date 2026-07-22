@@ -16,7 +16,7 @@ import {
 } from "recharts";
 
 import { api, ApiError } from "@/lib/api";
-import { LEAF, LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { LEAF_BRIGHT, LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
 import {
   cityFromLat,
   formatDate,
@@ -283,9 +283,6 @@ function PaceLineChart({
   }
   rows.sort((a, b) => a.ts - b.ts);
   const target = rows.find((r) => r.isTarget);
-  // The target is usually the newest run — a centered label on the last
-  // point clips at the chart edge, so hang it to the left there
-  const targetIsLast = target === rows.at(-1);
 
   // Dots are the runs; the line is only the pattern through them — a
   // least-squares fit by date, not a point-to-point connection
@@ -355,19 +352,15 @@ function PaceLineChart({
           activeDot={{ r: 5, fill: LEAF_MID, stroke: "#fff", strokeWidth: 2 }}
         />
         {target && (
+          // This run: solid and a notch brighter than the hollow
+          // leaf-mid comparables — no text label needed
           <ReferenceDot
             x={target.ts}
             y={target.pace}
             r={5.5}
-            fill={LEAF}
+            fill={LEAF_BRIGHT}
             stroke="#fff"
             strokeWidth={2}
-            label={{
-              value: "this run",
-              position: targetIsLast ? "left" : "top",
-              fontSize: 10,
-              fill: LEAF,
-            }}
           />
         )}
       </LineChart>

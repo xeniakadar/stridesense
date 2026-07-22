@@ -1,6 +1,8 @@
 // Design-token hex values for places Tailwind classes can't reach
 // (Recharts props). Keep in sync with @theme in app/globals.css.
 export const LEAF = "#3B9C7A";
+// Brighter accent of leaf — reserved for singling one mark out of a series
+export const LEAF_BRIGHT = "#2FC08D";
 export const LEAF_MID = "#8FD4B4";
 export const LEAF_SOFT = "#B7E3CF";
 export const LEAF_PALE = "#D7EFE3";
