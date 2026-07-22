@@ -16,7 +16,14 @@ import {
 } from "recharts";
 
 import { api, ApiError } from "@/lib/api";
-import { LEAF_BRIGHT, LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import {
+  LEAF_BRIGHT,
+  LEAF_MID,
+  LEAF_SOFT,
+  LINE,
+  SAND,
+  TOOLTIP_STYLE,
+} from "@/lib/colors";
 import {
   cityFromLat,
   formatDate,
@@ -338,7 +345,7 @@ function PaceLineChart({
         />
         <Line
           dataKey="trend"
-          stroke={LEAF_MID}
+          stroke={LEAF_SOFT}
           strokeWidth={2}
           strokeDasharray="6 4"
           dot={false}
