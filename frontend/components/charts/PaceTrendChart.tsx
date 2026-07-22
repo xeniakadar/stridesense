@@ -10,13 +10,14 @@ import {
   YAxis,
 } from "recharts";
 
+import { LEAF, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort, formatPace } from "@/lib/format";
 import type { PaceTrendPoint } from "@/lib/types";
 
 export function PaceTrendChart({ data }: { data: PaceTrendPoint[] }) {
   if (data.length === 0) {
     return (
-      <div className="text-sm text-gray-500 py-12 text-center">
+      <div className="text-sm text-sand py-12 text-center">
         No easy runs in the last 90 days yet.
       </div>
     );
@@ -28,17 +29,17 @@ export function PaceTrendChart({ data }: { data: PaceTrendPoint[] }) {
         data={data}
         margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
         <XAxis
           dataKey="date"
           tickFormatter={formatDateShort}
-          tick={{ fontSize: 12, fill: "#666" }}
+          tick={{ fontSize: 11, fill: SAND }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={(v: number) => formatPace(v)}
-          tick={{ fontSize: 12, fill: "#666" }}
+          tick={{ fontSize: 11, fill: SAND }}
           axisLine={false}
           tickLine={false}
           width={70}
@@ -46,13 +47,14 @@ export function PaceTrendChart({ data }: { data: PaceTrendPoint[] }) {
           domain={["dataMin - 10", "dataMax + 10"]}
         />
         <Tooltip
+          {...TOOLTIP_STYLE}
           labelFormatter={(label) => formatDateShort(label as string)}
           formatter={(value) => [formatPace(Number(value)), "Pace"]}
         />
         <Line
           type="monotone"
           dataKey="pace_seconds_per_km"
-          stroke="#111827"
+          stroke={LEAF}
           strokeWidth={2}
           dot={false}
         />
