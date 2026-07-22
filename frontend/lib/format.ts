@@ -46,6 +46,16 @@ export function formatTimeInRange(pct: number | null | undefined): string {
   return `${Math.round(pct)}%`;
 }
 
+// Same latitude buckets the backend uses in run_to_text (app/services/ask.py)
+export function cityFromLat(lat: number | null | undefined): string | null {
+  if (lat == null) return null;
+  if (lat >= 47 && lat < 48) return "Budapest";
+  if (lat >= 40 && lat < 41) return "NYC";
+  if (lat >= 38 && lat < 39) return "Lisbon";
+  if (lat >= 41 && lat < 42) return "Chicago";
+  return null;
+}
+
 export const RUN_TYPE_LABELS: Record<string, string> = {
   easy: "Easy",
   long: "Long",

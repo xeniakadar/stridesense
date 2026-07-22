@@ -48,10 +48,10 @@ export function AskSection() {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded p-5">
+    <div className="glass-ai rounded-2xl p-4">
       <div className="mb-4">
-        <h2 className="text-base font-medium">Ask your history</h2>
-        <p className="text-xs text-gray-500 mt-0.5">
+        <h2 className="text-[13px] font-medium text-leaf-deep">Ask your history</h2>
+        <p className="text-[11px] text-clay mt-0.5">
           {demoMode
             ? "Free-form questions are disabled in the demo — tap an example below."
             : "e.g. “how do I handle hot weather?” — answers cite your own runs"}
@@ -69,12 +69,12 @@ export function AskSection() {
               ? "Pick an example question below"
               : "Ask a question about your runs…"
           }
-          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
+          className="flex-1 min-w-0 bg-white/70 border-[0.5px] border-white/80 rounded-full px-3.5 py-2 text-sm text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-leaf disabled:text-sand"
         />
         <button
           type="submit"
           disabled={loading || demoMode || !question.trim()}
-          className="px-4 py-2 text-sm rounded bg-gray-900 text-white disabled:opacity-40"
+          className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:opacity-40"
         >
           {loading ? "Thinking…" : "Ask"}
         </button>
@@ -91,7 +91,7 @@ export function AskSection() {
                 setQuestion(q);
                 submit(q);
               }}
-              className="text-xs px-3 py-1.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="text-[11px] px-3 py-1.5 rounded-full bg-white/70 text-leaf-deep hover:bg-white disabled:opacity-50"
             >
               {q}
             </button>
@@ -99,20 +99,20 @@ export function AskSection() {
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
 
       {result && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm whitespace-pre-wrap">{result.answer}</p>
+          <p className="text-sm text-ink whitespace-pre-wrap">{result.answer}</p>
           {result.cited_runs.length > 0 && (
             <div>
-              <p className="text-xs text-gray-500 mb-1">Based on these runs:</p>
+              <p className="text-[11px] text-clay mb-1">Based on these runs:</p>
               <ul className="space-y-1">
                 {result.cited_runs.map((run) => (
                   <li key={run.run_id}>
                     <Link
                       href={`/runs/${run.run_id}`}
-                      className="text-sm text-blue-600 hover:underline"
+                      className="text-sm text-leaf-deep hover:underline"
                     >
                       {formatDate(run.date)} — {RUN_TYPE_LABELS[run.run_type]},{" "}
                       {run.distance_km} km

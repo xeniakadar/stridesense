@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
 import { RUN_TYPE_LABELS } from "@/lib/format";
 import type { RunTypeDistributionItem } from "@/lib/types";
 
@@ -20,7 +21,7 @@ export function RunTypeDistributionChart({
 }) {
   if (data.length === 0) {
     return (
-      <div className="text-sm text-gray-500 py-12 text-center">
+      <div className="text-sm text-sand py-12 text-center">
         No runs in the last 30 days yet.
       </div>
     );
@@ -38,22 +39,23 @@ export function RunTypeDistributionChart({
         layout="vertical"
         margin={{ top: 12, right: 12, bottom: 12, left: 16 }}
       >
-        <CartesianGrid strokeDasharray="3 3" stroke="#eee" horizontal={false} />
+        <CartesianGrid strokeDasharray="3 3" stroke={LINE} horizontal={false} />
         <XAxis
           type="number"
-          tick={{ fontSize: 12, fill: "#666" }}
+          tick={{ fontSize: 11, fill: SAND }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           type="category"
           dataKey="label"
-          tick={{ fontSize: 12, fill: "#666" }}
+          tick={{ fontSize: 11, fill: SAND }}
           axisLine={false}
           tickLine={false}
           width={80}
         />
         <Tooltip
+          {...TOOLTIP_STYLE}
           formatter={(value, _key, props) => {
             const count = Number(value);
             const dist =
@@ -62,7 +64,7 @@ export function RunTypeDistributionChart({
             return [`${count} runs · ${dist.toFixed(1)} km`, "Total"];
           }}
         />
-        <Bar dataKey="count" fill="#111827" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="count" fill={LEAF_MID} radius={[0, 5, 5, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );

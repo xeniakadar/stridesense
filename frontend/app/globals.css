@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Warm cream base — pages are never pure white */
+  --color-cream: #fdfbf7;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Warm brown text ramp — never gray on the cream base */
+  --color-ink: #4a2e1c;
+  --color-clay: #8a5a3c;
+  --color-sand: #b0866a;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Data green family — ALL data encoding uses these */
+  --color-leaf: #3b9c7a;
+  --color-leaf-mid: #8fd4b4;
+  --color-leaf-soft: #b7e3cf;
+  --color-leaf-pale: #d7efe3;
+  --color-leaf-deep: #1f5c46;
+
+  /* Cards */
+  --color-line: #efe9e0;
+
+  /* Bottom-nav inactive icons */
+  --color-nav-idle: #c9bca9;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fdfbf7;
+  color: #4a2e1c;
+  font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+}
+
+/* Material 1 — gradient surface: hero areas ONLY, max one per screen */
+.hero-gradient {
+  background: linear-gradient(135deg, #ffe8d6 0%, #ffd6c4 45%, #c9e9e4 100%);
+}
+
+/* Material 2 — glass: AI-generated content ONLY (insights, ask) */
+.glass-ai {
+  background: linear-gradient(
+    135deg,
+    rgba(201, 233, 228, 0.55),
+    rgba(255, 232, 214, 0.5)
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.8);
 }

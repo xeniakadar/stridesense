@@ -14,6 +14,7 @@ import {
 } from "recharts";
 
 import { api } from "@/lib/api";
+import { LEAF, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
 import type { GlucoseSample } from "@/lib/types";
 
 // Standard non-diabetic in-range band (mg/dL) — same bounds the backend
@@ -55,24 +56,24 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
   ];
 
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       <ResponsiveContainer width="100%" height={240}>
         <LineChart
           data={data}
           margin={{ top: 12, right: 12, bottom: 12, left: 0 }}
         >
-          <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+          <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
           <XAxis
             dataKey="elapsedMinutes"
             type="number"
             unit=" min"
-            tick={{ fontSize: 12, fill: "#666" }}
+            tick={{ fontSize: 11, fill: SAND }}
             axisLine={false}
             tickLine={false}
             domain={["dataMin", "dataMax"]}
           />
           <YAxis
-            tick={{ fontSize: 12, fill: "#666" }}
+            tick={{ fontSize: 11, fill: SAND }}
             axisLine={false}
             tickLine={false}
             width={40}
@@ -81,18 +82,19 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
           <ReferenceArea
             y1={RANGE_LOW}
             y2={RANGE_HIGH}
-            fill="#16a34a"
-            fillOpacity={0.08}
+            fill={LEAF}
+            fillOpacity={0.12}
             strokeOpacity={0}
           />
           <Tooltip
+            {...TOOLTIP_STYLE}
             labelFormatter={(label) => formatElapsed(Number(label) * 60)}
             formatter={(value) => [`${Math.round(Number(value))} mg/dL`, "Glucose"]}
           />
           <Line
             type="monotone"
             dataKey="glucose"
-            stroke="#111827"
+            stroke={LEAF}
             strokeWidth={2}
             dot={false}
           />
@@ -101,13 +103,13 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             y={minPoint.glucose}
             r={5}
             fill="#fff"
-            stroke="#111827"
+            stroke={LEAF}
             strokeWidth={2}
             label={{
               value: `min ${Math.round(minPoint.glucose)}`,
               position: "bottom",
               fontSize: 11,
-              fill: "#666",
+              fill: SAND,
             }}
           />
           <ReferenceDot
@@ -115,13 +117,13 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             y={maxPoint.glucose}
             r={5}
             fill="#fff"
-            stroke="#111827"
+            stroke={LEAF}
             strokeWidth={2}
             label={{
               value: `max ${Math.round(maxPoint.glucose)}`,
               position: "top",
               fontSize: 11,
-              fill: "#666",
+              fill: SAND,
             }}
           />
         </LineChart>

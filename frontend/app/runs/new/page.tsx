@@ -99,8 +99,8 @@ export default function NewRunPage() {
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-medium mb-6">Add a run</h1>
+    <div className="max-w-md">
+      <h1 className="text-xl font-medium text-ink mb-5">Add a run</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Field label="Date" error={errors.date?.message}>
@@ -128,7 +128,7 @@ export default function NewRunPage() {
         </Field>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-clay mb-1">
             Duration
           </label>
           <div className="grid grid-cols-3 gap-3">
@@ -189,7 +189,7 @@ export default function NewRunPage() {
         </Field>
 
         {submitError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-900">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-900">
             {submitError}
           </div>
         )}
@@ -198,14 +198,14 @@ export default function NewRunPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-gray-900 text-white px-4 py-2 rounded hover:bg-gray-700 disabled:opacity-50"
+            className="bg-ink text-cream px-5 py-2 rounded-full text-sm hover:bg-clay disabled:opacity-50"
           >
             {isSubmitting ? "Saving…" : "Save run"}
           </button>
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 rounded border border-gray-300 hover:bg-gray-50"
+            className="px-5 py-2 rounded-full text-sm text-clay border-[0.5px] border-line hover:bg-line/50"
           >
             Cancel
           </button>
@@ -216,7 +216,7 @@ export default function NewRunPage() {
 }
 
 const inputCls =
-  "w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-500";
+  "w-full bg-white border-[0.5px] border-line rounded-xl px-3.5 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-leaf/30 focus:border-leaf";
 
 function Field({
   label,
@@ -234,12 +234,12 @@ function Field({
       <label
         className={`block ${
           small ? "text-xs" : "text-sm"
-        } font-medium text-gray-700 mb-1`}
+        } font-medium text-clay mb-1`}
       >
         {label}
       </label>
       {children}
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
     </div>
   );
 }
