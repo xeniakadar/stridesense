@@ -3,7 +3,7 @@ normalized features."""
 
 import math
 from dataclasses import dataclass
-from statistics import mean, pstdev
+from statistics import mean, median, pstdev
 
 from app.models import Run
 from app.services.features import RunFeatures, extract_features
@@ -83,12 +83,34 @@ def _weighted_cosine(
     return (cosine + 1) / 2
 
 
-def find_similar_runs(
+@dataclass
+class SimilarRunsPool:
+    runs: list[SimilarRun]
+    pool_size: int  # candidates actually ranked (after type filter/fallback)
+    type_fallback: bool  # True when too few same-type runs forced an all-types pool
+
+
+@dataclass
+class ComparisonDeltas:
+    """This run minus the MEDIAN of its comparables, per metric.
+
+    Median, not mean: one outlier comparable (a bonked run, a heat wave)
+    shouldn't drag the baseline. A delta is None whenever either side
+    lacks the metric. Negative pace/HR deltas mean faster/lower.
+    """
+
+    pace_delta_seconds_per_km: float | None
+    avg_hr_delta: float | None
+    weather_temp_delta_c: float | None
+    glucose_delta_mg_dl: float | None
+
+
+def find_similar_runs_detailed(
     target: Run,
     candidates: list[Run],
     limit: int = 5,
     min_pool: int = 8,
-) -> list[SimilarRun]:
+) -> SimilarRunsPool:
     """Rank candidates by similarity to target.
 
     Prefers runs of the same type; falls back to all runs when fewer than
@@ -99,11 +121,13 @@ def find_similar_runs(
     ]
     if len(same_type) >= min_pool:
         pool = same_type
+        type_fallback = False
     else:
         pool = [r for r in candidates if r.id != target.id]
+        type_fallback = True
 
     if not pool:
-        return []
+        return SimilarRunsPool(runs=[], pool_size=0, type_fallback=type_fallback)
 
     target_f = extract_features(target)
     pool_f = [extract_features(r) for r in pool]
@@ -114,4 +138,54 @@ def find_similar_runs(
         for r, f in zip(pool, pool_f, strict=True)
     ]
     scored.sort(key=lambda s: s.score, reverse=True)
-    return scored[:limit]
+    return SimilarRunsPool(
+        runs=scored[:limit], pool_size=len(pool), type_fallback=type_fallback
+    )
+
+
+def find_similar_runs(
+    target: Run,
+    candidates: list[Run],
+    limit: int = 5,
+    min_pool: int = 8,
+) -> list[SimilarRun]:
+    return find_similar_runs_detailed(target, candidates, limit, min_pool).runs
+
+
+def _median_delta(
+    target_value: float | None, comparable_values: list[float]
+) -> float | None:
+    if target_value is None or not comparable_values:
+        return None
+    return round(target_value - median(comparable_values), 1)
+
+
+def compare_to_similar(
+    target: Run, similar: list[SimilarRun]
+) -> ComparisonDeltas | None:
+    """Deltas of this run vs the median of its comparables (see dataclass)."""
+    if not similar:
+        return None
+    runs = [s.run for s in similar]
+    # Start temp: the temperature number the rest of the UI shows for a run
+    return ComparisonDeltas(
+        pace_delta_seconds_per_km=_median_delta(
+            target.avg_pace_seconds_per_km,
+            [r.avg_pace_seconds_per_km for r in runs if r.avg_pace_seconds_per_km],
+        ),
+        avg_hr_delta=_median_delta(
+            target.avg_hr, [r.avg_hr for r in runs if r.avg_hr is not None]
+        ),
+        weather_temp_delta_c=_median_delta(
+            target.weather_temp_start_c,
+            [r.weather_temp_start_c for r in runs if r.weather_temp_start_c is not None],
+        ),
+        glucose_delta_mg_dl=_median_delta(
+            target.glucose_avg_during_run_mg_dl,
+            [
+                r.glucose_avg_during_run_mg_dl
+                for r in runs
+                if r.glucose_avg_during_run_mg_dl is not None
+            ],
+        ),
+    )
