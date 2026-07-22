@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
 import { api, ApiError } from "@/lib/api";
@@ -331,9 +332,7 @@ function InsightSection({ runId }: { runId: string }) {
       </div>
       {loading && <p className="mt-2 text-sm text-clay">Analyzing this run…</p>}
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
-      {insight && (
-        <p className="mt-2 text-sm leading-relaxed text-ink">{insight}</p>
-      )}
+      {insight && <AiText text={insight} className="mt-2" />}
     </section>
   );
 }
