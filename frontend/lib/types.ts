@@ -160,6 +160,14 @@ export interface Insight {
   created_at: string;
 }
 
+export interface DailyBrief {
+  date: string;
+  content: string;
+  // null when the backend answered without the LLM (no data yet)
+  model: string | null;
+  created_at: string;
+}
+
 export interface AppConfig {
   demo_mode: boolean;
 }
