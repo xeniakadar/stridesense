@@ -32,6 +32,23 @@ docker compose exec backend uv run python -m scripts.embed_runs          # dry r
 docker compose exec backend uv run python -m scripts.embed_runs --apply
 ```
 
+## Demo deployment
+
+A demo deployment (DEMO_MODE=true) seeds from the committed marathon-block
+fixture and pre-generates everything the read-only UI serves. Run in order:
+
+```bash
+docker compose exec backend uv run python -m scripts.seed_demo
+docker compose exec backend uv run python -m scripts.embed_runs --apply
+docker compose exec backend uv run python -m scripts.pregenerate_insights
+docker compose exec backend uv run python -m scripts.pregenerate_ask_answers
+```
+
+Glucose in the demo dataset is synthetic (generated per run, tagged
+`manual`); the UI captions it as simulated. The fixture is refreshed with
+`scripts/export_demo_block.py`, which snaps coordinates to city centers and
+whitelists fields — see its docstring before touching it.
+
 ## Repo layout
 
 ```

@@ -1,9 +1,10 @@
 """Pre-generate and cache an insight per run plus today's daily brief.
 
 Demo mode never generates on demand (the insight GET serves cached rows
-only; /daily-brief serves the newest pre-generated brief), so a demo
-deployment runs this once after seeding data, e.g.:
+only; /daily-brief serves the newest pre-generated brief). The full demo
+deploy sequence, in order:
 
+    docker compose exec backend uv run python -m scripts.seed_demo
     docker compose exec backend uv run python -m scripts.embed_runs --apply
     docker compose exec backend uv run python -m scripts.pregenerate_insights
     docker compose exec backend uv run python -m scripts.pregenerate_ask_answers
