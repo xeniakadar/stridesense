@@ -1,9 +1,13 @@
 """Personal records over a run history.
 
-Distance records use tolerance bands (a "5K" is rarely 5.00 km on a
-watch) and rank by pace, which is fair across the band; the row's value
-rendering is the frontend's business. Biggest week is an ISO-week
-distance sum and has no single run to link to.
+"Fastest 5K" means the best average pace over any run of AT LEAST ~5 km
+(with a small tolerance below — a watch's 4.85 km counts). Minimum
+thresholds, not bands: a 10 km race obviously contains a 5K at that
+pace, and because every >=10K candidate is also a >=5K candidate, the
+records are monotone by construction — your 5K can never be slower
+than your 10K. Ranking is by pace; the row's value rendering is the
+frontend's business. Biggest week is an ISO-week distance sum and has
+no single run to link to.
 """
 
 from collections import defaultdict
@@ -13,11 +17,11 @@ from uuid import UUID
 
 from app.models import Run
 
-# kind -> (min_km, max_km)
-DISTANCE_BANDS: dict[str, tuple[float, float]] = {
-    "fastest_5k": (4.8, 5.5),
-    "fastest_10k": (9.5, 11.0),
-    "fastest_half": (20.6, 21.8),
+# kind -> minimum distance (km) a run must cover to count
+DISTANCE_MINIMUMS: dict[str, float] = {
+    "fastest_5k": 4.8,
+    "fastest_10k": 9.5,
+    "fastest_half": 20.6,
 }
 
 
@@ -35,11 +39,11 @@ def compute_records(runs: list[Run]) -> list[RecordItem]:
     """Every record with data to back it; kinds without a match are absent."""
     records: list[RecordItem] = []
 
-    for kind, (lo, hi) in DISTANCE_BANDS.items():
+    for kind, minimum_km in DISTANCE_MINIMUMS.items():
         candidates = [
             r
             for r in runs
-            if lo <= r.distance_km <= hi and r.avg_pace_seconds_per_km
+            if r.distance_km >= minimum_km and r.avg_pace_seconds_per_km
         ]
         if not candidates:
             continue

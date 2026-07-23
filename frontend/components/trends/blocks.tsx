@@ -10,8 +10,15 @@ import { RunTypeDistributionChart } from "@/components/charts/RunTypeDistributio
 import { TrainingLoadChart } from "@/components/charts/TrainingLoadChart";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
-import { formatDate, formatDistance, formatPace } from "@/lib/format";
+import {
+  flagEmoji,
+  formatDate,
+  formatDistance,
+  formatMonthYear,
+  formatPace,
+} from "@/lib/format";
 import type {
+  CityStats,
   GlucoseTrendPoint,
   LoadPoint,
   MonthlyVolumePoint,
@@ -98,20 +105,49 @@ function Loading() {
 // --- blocks ---
 
 function CitiesBlock() {
+  const [cities, setCities] = useState<CityStats[] | null>(null);
+  useEffect(() => {
+    api
+      .getCities()
+      .then((res) => setCities(res.cities))
+      .catch(() => setCities([]));
+  }, []);
+
+  // Preview: the 3 most recently visited cities
+  const recent = (cities ?? [])
+    .slice()
+    .sort((a, b) => b.last_run_date.localeCompare(a.last_run_date))
+    .slice(0, 3);
+
   return (
     <Link
       href="/trends/cities"
-      className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-3"
+      className="block bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-3"
     >
-      <span>
-        <span className="block text-[13.5px] font-medium text-ink">
-          🌍 Cities
+      <span className="flex justify-between items-center">
+        <span>
+          <span className="block text-[13.5px] font-medium text-ink">
+            🌍 Cities
+          </span>
+          <span className="block text-[11.5px] text-clay mt-0.5">
+            everywhere you've run
+          </span>
         </span>
-        <span className="block text-[11.5px] text-clay mt-0.5">
-          everywhere you've run
-        </span>
+        <span className="text-sm text-leaf">→</span>
       </span>
-      <span className="text-sm text-leaf">→</span>
+      {recent.length > 0 && (
+        <span className="flex flex-wrap gap-1.5 mt-2.5">
+          {recent.map((city) => (
+            <span
+              key={`${city.name}-${city.lat}-${city.lng}`}
+              className="text-[11px] bg-leaf-pale/70 text-leaf-deep px-2.5 py-1 rounded-full"
+            >
+              {flagEmoji(city.country_code)} {city.name} ·{" "}
+              {formatMonthYear(city.last_run_date)}
+            </span>
+          ))}
+        </span>
+      )}
     </Link>
   );
 }
