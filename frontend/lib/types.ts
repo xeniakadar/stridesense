@@ -177,6 +177,25 @@ export interface Insight {
   created_at: string;
 }
 
+export interface MonthlyVolumePoint {
+  month: string; // first day of the month
+  distance_km: number;
+}
+
+export interface RecordItem {
+  kind: string;
+  run_id: string | null; // null for biggest_week — it isn't one run
+  date: string; // week start for biggest_week
+  distance_km: number;
+  duration_seconds: number | null;
+  avg_pace_seconds_per_km: number | null;
+}
+
+export interface GlucoseTrendPoint {
+  date: string;
+  time_in_range_pct: number;
+}
+
 export interface CityStats {
   name: string;
   country_code: string | null;

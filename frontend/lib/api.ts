@@ -3,6 +3,9 @@ import type {
   AskAnswer,
   CitiesResponse,
   DailyBrief,
+  GlucoseTrendPoint,
+  MonthlyVolumePoint,
+  RecordItem,
   GlucoseSample,
   ImportJob,
   Insight,
@@ -80,6 +83,14 @@ export const api = {
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
 
   getCities: () => request<CitiesResponse>("/analytics/cities"),
+
+  getMonthlyVolume: () =>
+    request<MonthlyVolumePoint[]>("/analytics/monthly-volume"),
+
+  getRecords: () => request<RecordItem[]>("/analytics/records"),
+
+  getGlucoseTrend: () =>
+    request<GlucoseTrendPoint[]>("/analytics/glucose-trend"),
 
   getInsight: (id: string) => request<Insight>(`/runs/${id}/insight`),
 
