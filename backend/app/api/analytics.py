@@ -7,10 +7,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
-from app.models import Run
-from app.schemas.analytics import CitiesRead, CityStatsRead, LoadPointRead
+from app.models import GlucoseDailyRecord, Run
+from app.schemas.analytics import (
+    CitiesRead,
+    CityStatsRead,
+    GlucoseTrendPoint,
+    LoadPointRead,
+    MonthlyVolumePoint,
+    RecordRead,
+)
 from app.services import list_runs
 from app.services.cities import cluster_cities
+from app.services.records import compute_records
 from app.services.training_load import compute_load_series
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -106,6 +114,69 @@ async def run_type_distribution(
             "total_distance_km": round(data["total_distance_km"], 2),
         }
         for run_type, data in sorted(grouped.items(), key=lambda x: -x[1]["count"])
+    ]
+
+
+@router.get("/monthly-volume", response_model=list[MonthlyVolumePoint])
+async def monthly_volume(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[MonthlyVolumePoint]:
+    """Total km per calendar month for the last 12 months, empty months
+    included."""
+    today = date.today()
+    months: list[date] = []
+    year, month = today.year, today.month
+    for _ in range(12):
+        months.append(date(year, month, 1))
+        month -= 1
+        if month == 0:
+            year, month = year - 1, 12
+    months.reverse()
+
+    result = await session.execute(
+        select(Run).where(Run.user_id == user_id, Run.date >= months[0])
+    )
+    by_month: dict[date, float] = defaultdict(float)
+    for r in result.scalars().all():
+        by_month[date(r.date.year, r.date.month, 1)] += r.distance_km
+
+    return [
+        MonthlyVolumePoint(month=m, distance_km=round(by_month.get(m, 0.0), 2))
+        for m in months
+    ]
+
+
+@router.get("/records", response_model=list[RecordRead])
+async def records_endpoint(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[RecordRead]:
+    result = await session.execute(select(Run).where(Run.user_id == user_id))
+    runs = list(result.scalars().all())
+    return [RecordRead.model_validate(r) for r in compute_records(runs)]
+
+
+@router.get("/glucose-trend", response_model=list[GlucoseTrendPoint])
+async def glucose_trend(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> list[GlucoseTrendPoint]:
+    """Daily time-in-range % for the last 90 days; empty when the user has
+    no glucose data at all."""
+    cutoff = date.today() - timedelta(days=90)
+    result = await session.execute(
+        select(GlucoseDailyRecord)
+        .where(
+            GlucoseDailyRecord.user_id == user_id,
+            GlucoseDailyRecord.date >= cutoff,
+            GlucoseDailyRecord.time_in_range_pct.isnot(None),
+        )
+        .order_by(GlucoseDailyRecord.date)
+    )
+    return [
+        GlucoseTrendPoint(date=rec.date, time_in_range_pct=rec.time_in_range_pct)
+        for rec in result.scalars().all()
     ]
 
 
