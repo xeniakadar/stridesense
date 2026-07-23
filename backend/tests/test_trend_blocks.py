@@ -45,6 +45,31 @@ async def test_records_distance_tolerance_and_pace_ranking(
     assert "fastest_half" not in by_kind
 
 
+async def test_records_are_monotone_fast_long_runs_set_shorter_records(
+    client: AsyncClient, isolated_user
+) -> None:
+    today = date.today()
+    # A slow standalone 5K and a fast 10K race: the 10K contains a 5K at
+    # race pace, so it must hold BOTH records — never a 5K slower than
+    # the 10K
+    await client.post("/runs", json=_run_payload(today - timedelta(days=1), 5.2, 1872))
+    fast_10k = (
+        await client.post(
+            "/runs", json=_run_payload(today - timedelta(days=2), 10.0, 3000)
+        )
+    ).json()
+
+    res = await client.get("/analytics/records")
+    by_kind = {r["kind"]: r for r in res.json()}
+
+    assert by_kind["fastest_10k"]["run_id"] == fast_10k["id"]
+    assert by_kind["fastest_5k"]["run_id"] == fast_10k["id"]
+    assert (
+        by_kind["fastest_5k"]["avg_pace_seconds_per_km"]
+        <= by_kind["fastest_10k"]["avg_pace_seconds_per_km"]
+    )
+
+
 async def test_records_longest_run_and_biggest_week(
     client: AsyncClient, isolated_user
 ) -> None:
