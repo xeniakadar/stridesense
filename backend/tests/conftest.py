@@ -12,6 +12,11 @@ from app.db.session import engine as app_engine
 from app.main import app
 from app.models import User
 
+# The suite must pass on any deployment, including one with DEMO_MODE=true
+# in the environment: demo behavior is tested by patching get_settings at
+# the lookup sites, never via the ambient flag.
+get_settings().demo_mode = False
+
 
 @pytest_asyncio.fixture(autouse=True)
 async def _dispose_app_engine():
