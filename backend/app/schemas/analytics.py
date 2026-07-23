@@ -62,6 +62,27 @@ class InsightRead(BaseModel):
     created_at: datetime
 
 
+class CityStatsRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    country_code: str | None
+    lat: float
+    lng: float
+    run_count: int
+    total_km: float
+    first_run_date: date_type
+    last_run_date: date_type
+    min_temp_c: float | None
+    max_temp_c: float | None
+    has_race: bool
+
+
+class CitiesRead(BaseModel):
+    cities: list[CityStatsRead]
+    unlocated_count: int
+
+
 class DailyBriefRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
