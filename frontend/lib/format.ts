@@ -53,6 +53,16 @@ export function formatTimeInRange(pct: number | null | undefined): string {
   return `${Math.round(pct)}%`;
 }
 
+// ISO 3166-1 alpha-2 → flag emoji via regional-indicator codepoints
+export function flagEmoji(countryCode: string | null): string {
+  if (!countryCode || countryCode.length !== 2) return "📍";
+  return String.fromCodePoint(
+    ...[...countryCode.toUpperCase()].map(
+      (c) => 0x1f1e6 + c.charCodeAt(0) - 65
+    )
+  );
+}
+
 // Same latitude buckets the backend uses in run_to_text (app/services/ask.py)
 export function cityFromLat(lat: number | null | undefined): string | null {
   if (lat == null) return null;

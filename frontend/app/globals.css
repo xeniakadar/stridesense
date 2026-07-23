@@ -21,6 +21,9 @@
 
   /* Bottom-nav inactive icons */
   --color-nav-idle: #c9bca9;
+
+  /* Warm accent for race markers/chips */
+  --color-ember: #d88a4a;
 }
 
 body {
