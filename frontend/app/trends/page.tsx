@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { PaceTrendChart } from "@/components/charts/PaceTrendChart";
@@ -27,6 +28,21 @@ export default function TrendsPage() {
   return (
     <div className="space-y-3">
       <h1 className="text-xl font-medium text-ink px-1">Trends</h1>
+
+      <Link
+        href="/trends/cities"
+        className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-3"
+      >
+        <span>
+          <span className="block text-[13.5px] font-medium text-ink">
+            🌍 Cities
+          </span>
+          <span className="block text-[11.5px] text-clay mt-0.5">
+            everywhere you've run
+          </span>
+        </span>
+        <span className="text-sm text-leaf">→</span>
+      </Link>
 
       <ChartCard title="Easy-run pace trend" subtitle="last 90 days">
         {pace ? <PaceTrendChart data={pace} /> : <Loading />}

@@ -177,6 +177,25 @@ export interface Insight {
   created_at: string;
 }
 
+export interface CityStats {
+  name: string;
+  country_code: string | null;
+  lat: number;
+  lng: number;
+  run_count: number;
+  total_km: number;
+  first_run_date: string;
+  last_run_date: string;
+  min_temp_c: number | null;
+  max_temp_c: number | null;
+  has_race: boolean;
+}
+
+export interface CitiesResponse {
+  cities: CityStats[];
+  unlocated_count: number;
+}
+
 export interface DailyBrief {
   date: string;
   content: string;

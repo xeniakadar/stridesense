@@ -1,6 +1,7 @@
 import type {
   AppConfig,
   AskAnswer,
+  CitiesResponse,
   DailyBrief,
   GlucoseSample,
   ImportJob,
@@ -77,6 +78,8 @@ export const api = {
     request<SimilarRunsResponse>(`/runs/${id}/similar`),
 
   getTrainingLoad: () => request<LoadPoint[]>(`/analytics/training-load`),
+
+  getCities: () => request<CitiesResponse>("/analytics/cities"),
 
   getInsight: (id: string) => request<Insight>(`/runs/${id}/insight`),
 

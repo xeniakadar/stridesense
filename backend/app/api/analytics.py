@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user_id, get_session
 from app.models import Run
-from app.schemas.analytics import LoadPointRead
+from app.schemas.analytics import CitiesRead, CityStatsRead, LoadPointRead
 from app.services import list_runs
+from app.services.cities import cluster_cities
 from app.services.training_load import compute_load_series
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -106,6 +107,20 @@ async def run_type_distribution(
         }
         for run_type, data in sorted(grouped.items(), key=lambda x: -x[1]["count"])
     ]
+
+
+@router.get("/cities", response_model=CitiesRead)
+async def cities_endpoint(
+    session: AsyncSession = Depends(get_session),
+    user_id: UUID = Depends(get_current_user_id),
+) -> CitiesRead:
+    result = await session.execute(select(Run).where(Run.user_id == user_id))
+    runs = list(result.scalars().all())
+    cities, unlocated_count = cluster_cities(runs)
+    return CitiesRead(
+        cities=[CityStatsRead.model_validate(c) for c in cities],
+        unlocated_count=unlocated_count,
+    )
 
 
 @router.get("/training-load", response_model=list[LoadPointRead])
