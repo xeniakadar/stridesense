@@ -71,7 +71,7 @@ export default function CompareRunPage() {
           >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
-          <p className="text-[13px] font-medium text-ink">vs similar runs</p>
+          <p className="text-[13px] font-medium text-ink">Similar runs</p>
           <span className="w-[18px]" />
         </div>
         <p className="mt-2.5 text-xs text-clay-hero">
@@ -264,11 +264,13 @@ function interpret(comparison: Comparison, runType: string): string {
  * ReferenceDot overlay drew an identical open circle over the target and
  * left it indistinguishable.) */
 function RunDot(props: {
+  firstTs: number;
+  lastTs: number;
   cx?: number;
   cy?: number;
-  payload?: { isTarget?: boolean };
+  payload?: { isTarget?: boolean; ts?: number };
 }) {
-  const { cx, cy, payload } = props;
+  const { firstTs, lastTs, cx, cy, payload } = props;
   if (cx == null || cy == null) return null;
   if (!payload?.isTarget) {
     return (
@@ -282,15 +284,25 @@ function RunDot(props: {
       />
     );
   }
-  // Label above the marker unless that would clip at the top margin
-  const labelAbove = cy > 26;
+  // A centered label clips when the point sits near either x-edge (the
+  // target is usually the newest run, hard against the right margin) —
+  // hang it sideways there instead
+  const t = ((payload.ts ?? firstTs) - firstTs) / (lastTs - firstTs || 1);
+  const label =
+    t > 0.85
+      ? { x: cx - 10, y: cy + 3.5, anchor: "end" as const }
+      : t < 0.15
+        ? { x: cx + 10, y: cy + 3.5, anchor: "start" as const }
+        : cy > 26
+          ? { x: cx, y: cy - 11, anchor: "middle" as const }
+          : { x: cx, y: cy + 18, anchor: "middle" as const };
   return (
     <g>
       <circle cx={cx} cy={cy} r={6} fill={LEAF_BRIGHT} stroke="#fff" strokeWidth={2} />
       <text
-        x={cx}
-        y={labelAbove ? cy - 11 : cy + 18}
-        textAnchor="middle"
+        x={label.x}
+        y={label.y}
+        textAnchor={label.anchor}
         fontSize={10}
         fontWeight={500}
         fill={AXIS}
@@ -398,7 +410,7 @@ function PaceLineChart({
         <Line
           dataKey="pace"
           stroke="none"
-          dot={<RunDot />}
+          dot={<RunDot firstTs={data[0].ts} lastTs={data[data.length - 1].ts} />}
           activeDot={{ r: 5, fill: LEAF_MID, stroke: "#fff", strokeWidth: 2 }}
         />
       </LineChart>
