@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 
 import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
+import { Confetti } from "@/components/Confetti";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
 import { Chip, TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
@@ -64,6 +65,7 @@ export default function RunDetailPage() {
 
   return (
     <div className="space-y-3">
+      {run.run_type === "race" && <Confetti />}
       {/* Hero — the screen's single gradient surface */}
       {/* run-{type} tints the mesh (green easy, orange interval, red
           tempo, …); unknown types fall back to the neutral warm mix */}
