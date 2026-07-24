@@ -44,7 +44,9 @@ def _run_payload(run_date: date) -> dict:
 async def canned_answer(session: AsyncSession):
     """A stored demo Q&A row, cleaned up afterwards (shared dev database)."""
     row = AskDemoAnswer(
-        question="How do I handle running in hot weather?",
+        # Unique per run: the shared dev database already holds the real
+        # pregenerated demo rows, and question carries a unique constraint
+        question=f"How do I handle hot weather? (test {uuid4().hex[:8]})",
         answer="Your run on 2026-06-14 shows you slow down about 20s/km in heat.",
         model="claude-sonnet-4-6",
         cited_runs=[
@@ -148,7 +150,11 @@ async def test_ask_demo_serves_canned_answer_verbatim(
     body = res.json()
     assert body["answer"] == canned_answer.answer
     assert body["model"] == canned_answer.model
-    assert body["cited_runs"] == canned_answer.cited_runs
+    # Served verbatim, except the schema defaults fields (city) that rows
+    # pre-generated before the field existed don't carry
+    assert body["cited_runs"] == [
+        {"city": None, **r} for r in canned_answer.cited_runs
+    ]
     # Neither retrieval nor generation runs in demo mode
     assert mock_retrieve.await_count == 0
     assert mock_generate.await_count == 0
