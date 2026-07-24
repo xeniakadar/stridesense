@@ -32,6 +32,26 @@ docker compose exec backend uv run python -m scripts.embed_runs          # dry r
 docker compose exec backend uv run python -m scripts.embed_runs --apply
 ```
 
+## Demo deployment
+
+A demo deployment (DEMO_MODE=true) seeds a deterministic synthetic dataset
+— ~350 runs since Jan 2025 with a residence timeline (Phuket → Hanoi →
+Budapest → Lisbon → NYC → Chicago → SF → Lisbon → NYC), per-city climate,
+four races, and a scripted fitness arc — then pre-generates everything the
+read-only UI serves. Run in order:
+
+```bash
+docker compose exec backend uv run python -m scripts.seed_demo
+docker compose exec backend uv run python -m scripts.embed_runs --apply
+docker compose exec backend uv run python -m scripts.pregenerate_insights
+docker compose exec backend uv run python -m scripts.pregenerate_ask_answers
+```
+
+Everything in the demo dataset is synthetic and tagged `manual`; the UI
+captions glucose as simulated. (`scripts/export_demo_block.py` still exists
+for exporting a privacy-scrubbed block of real runs, but is no longer part
+of the demo path.)
+
 ## Repo layout
 
 ```

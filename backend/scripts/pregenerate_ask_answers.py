@@ -23,11 +23,12 @@ from app.services.ask import ASK_MODEL, generate_answer, retrieve
 from app.services.insights import InsightUnavailableError
 
 # The curated demo set — shown as tappable chips in the AskSection.
+# Written for the synthetic demo dataset (scripts/seed_demo.py).
 QUESTIONS = [
-    "How do I handle running in hot weather?",
-    "What do my long runs look like?",
-    "Have I gotten faster on my easy runs?",
-    "How do my runs in Lisbon compare to elsewhere?",
+    "Tell me about my marathon",
+    "How do I handle running in tropical heat?",
+    "How has my easy pace changed since last year?",
+    "What does my glucose do on long runs?",
 ]
 
 

@@ -62,6 +62,48 @@ class InsightRead(BaseModel):
     created_at: datetime
 
 
+class MonthlyVolumePoint(BaseModel):
+    month: date_type  # first day of the month
+    distance_km: float
+
+
+class RecordRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    kind: str
+    run_id: UUID | None  # None for biggest_week — it isn't one run
+    date: date_type  # week start for biggest_week
+    distance_km: float
+    duration_seconds: int | None
+    avg_pace_seconds_per_km: float | None
+
+
+class GlucoseTrendPoint(BaseModel):
+    date: date_type
+    time_in_range_pct: float
+
+
+class CityStatsRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    country_code: str | None
+    lat: float
+    lng: float
+    run_count: int
+    total_km: float
+    first_run_date: date_type
+    last_run_date: date_type
+    min_temp_c: float | None
+    max_temp_c: float | None
+    has_race: bool
+
+
+class CitiesRead(BaseModel):
+    cities: list[CityStatsRead]
+    unlocated_count: int
+
+
 class DailyBriefRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

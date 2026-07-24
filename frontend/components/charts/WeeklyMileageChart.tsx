@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { LEAF, LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LEAF_MID, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { WeeklyMileagePoint } from "@/lib/types";
 
@@ -26,13 +26,14 @@ export function WeeklyMileageChart({ data }: { data: WeeklyMileagePoint[] }) {
         <XAxis
           dataKey="week_start"
           tickFormatter={formatDateShort}
-          tick={{ fontSize: 11, fill: SAND }}
+          minTickGap={28}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           unit=" km"
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={60}

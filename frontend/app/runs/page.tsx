@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { api, ApiError } from "@/lib/api";
 import {
   formatDate,
@@ -34,16 +36,50 @@ function SourceBadge({ source }: { source: DataSource }) {
   );
 }
 
+// useSearchParams needs a Suspense boundary for prerendering
 export default function RunsPage() {
-  const [runs, setRuns] = useState<Run[] | null>(null);
+  return (
+    <Suspense fallback={<div className="text-sand text-sm">Loading runs…</div>}>
+      <RunsPageInner />
+    </Suspense>
+  );
+}
+
+// Matches the cities clustering radius (backend CLUSTER_RADIUS_DEG)
+const CITY_FILTER_RADIUS_DEG = 0.15;
+
+function RunsPageInner() {
+  const demoMode = useDemoMode();
+  const [allRuns, setAllRuns] = useState<Run[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const params = useSearchParams();
 
   useEffect(() => {
     api
       .listRuns()
-      .then(setRuns)
+      .then(setAllRuns)
       .catch((e: ApiError) => setError(e.message));
   }, []);
+
+  // City filter from /trends/cities "View runs →"
+  const cityName = params.get("city");
+  const lat = Number(params.get("lat"));
+  const lng = Number(params.get("lng"));
+  const cityFilterActive =
+    cityName !== null && Number.isFinite(lat) && Number.isFinite(lng);
+
+  const runs =
+    allRuns === null
+      ? null
+      : cityFilterActive
+        ? allRuns.filter(
+            (r) =>
+              r.start_lat !== null &&
+              r.start_lng !== null &&
+              Math.hypot(r.start_lat - lat, r.start_lng - lng) <=
+                CITY_FILTER_RADIUS_DEG
+          )
+        : allRuns;
 
   if (error) {
     return (
@@ -58,6 +94,19 @@ export default function RunsPage() {
   }
 
   if (runs.length === 0) {
+    if (cityFilterActive) {
+      return (
+        <div className="text-center py-16">
+          <p className="text-clay mb-4">No runs in {cityName}.</p>
+          <Link
+            href="/runs"
+            className="inline-block text-sm text-leaf hover:underline"
+          >
+            Show all runs
+          </Link>
+        </div>
+      );
+    }
     return (
       <div className="text-center py-16">
         <p className="text-clay mb-4">No runs yet.</p>
@@ -74,8 +123,21 @@ export default function RunsPage() {
   return (
     <div>
       <div className="flex items-baseline justify-between mb-3 px-1">
-        <h1 className="text-xl font-medium text-ink">Runs</h1>
-        <span className="text-xs text-sand">{runs.length} total</span>
+        <span className="flex items-center gap-2">
+          <h1 className="text-[32px] font-medium text-ink leading-tight">Runs</h1>
+          {cityFilterActive && (
+            <Link
+              href="/runs"
+              className="text-[11px] bg-leaf-pale text-leaf-deep px-2.5 py-0.5 rounded-full hover:bg-leaf-soft"
+              title="Clear city filter"
+            >
+              {cityName} ×
+            </Link>
+          )}
+        </span>
+        <span className="text-xs text-sand">
+          {runs.length} {cityFilterActive ? `in ${cityName}` : "total"}
+        </span>
       </div>
 
       <div className="space-y-1.5">
@@ -86,22 +148,25 @@ export default function RunsPage() {
             className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
           >
             <span>
-              <span className="block text-[13px] text-ink">
+              <span className="block text-[15px] text-ink">
                 {formatDate(run.date)} · {formatDistance(run.distance_km)}
               </span>
-              <span className="block text-[11px] text-sand mt-0.5">
+              <span className="block text-[13px] text-sand mt-0.5">
                 {RUN_TYPE_LABELS[run.run_type]} ·{" "}
                 {formatPace(run.avg_pace_seconds_per_km)} ·{" "}
                 {formatDuration(run.duration_seconds)}
                 {run.avg_hr ? ` · ${run.avg_hr} bpm` : ""}
               </span>
             </span>
-            <span className="flex items-center gap-1.5 shrink-0 ml-3">
-              {run.glucose_at_start_mg_dl !== null && (
-                <span title="Glucose data attached">🩸</span>
-              )}
-              <SourceBadge source={run.source} />
-            </span>
+            {!demoMode && (
+              // In demo every row is manual + simulated glucose — pure noise
+              <span className="flex items-center gap-1.5 shrink-0 ml-3">
+                {run.glucose_at_start_mg_dl !== null && (
+                  <span title="Glucose data attached">🩸</span>
+                )}
+                <SourceBadge source={run.source} />
+              </span>
+            )}
           </Link>
         ))}
       </div>

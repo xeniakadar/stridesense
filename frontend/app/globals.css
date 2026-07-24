@@ -1,37 +1,91 @@
 @import "tailwindcss";
 
+/* Palette v2 — token values only; names and component structure unchanged.
+   Mesh hues: coral #FF8A6B, rose #FF5E7E, amber #FFC46B, teal #5FD4BE,
+   lime #C8E87A, lavender #B78BE8. */
 @theme {
-  /* Warm cream base — pages are never pure white */
-  --color-cream: #fdfbf7;
+  /* Near-white warm base — pages are never pure white */
+  --color-cream: #fffbf7;
 
-  /* Warm brown text ramp — never gray on the cream base */
-  --color-ink: #4a2e1c;
-  --color-clay: #8a5a3c;
-  --color-sand: #b0866a;
+  /* Warm brown text ramp — never gray on the warm base */
+  --color-ink: #4a2410;
+  --color-clay: #7e4423;
+  --color-clay-hero: #96502f; /* secondary text lightens on hero meshes */
+  --color-sand: #bb8a66;
 
-  /* Data green family — ALL data encoding uses these */
-  --color-leaf: #3b9c7a;
-  --color-leaf-mid: #8fd4b4;
-  --color-leaf-soft: #b7e3cf;
-  --color-leaf-pale: #d7efe3;
-  --color-leaf-deep: #1f5c46;
+  /* Data teal family — ALL data encoding uses these */
+  --color-leaf: #1fa890;
+  --color-leaf-mid: #5fd4be;
+  --color-leaf-soft: #a5e7d8;
+  --color-leaf-pale: #ddf5ee;
+  --color-leaf-deep: #0c6653;
 
   /* Cards */
-  --color-line: #efe9e0;
+  --color-line: #f2e7da;
 
   /* Bottom-nav inactive icons */
-  --color-nav-idle: #c9bca9;
+  --color-nav-idle: #d6c3af;
+
+  /* Warm accent for race markers/chips (mesh rose, deepened for text) */
+  --color-ember: #e8506e;
 }
 
 body {
-  background: #fdfbf7;
-  color: #4a2e1c;
+  background: #fffbf7;
+  color: #4a2410;
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
 
-/* Material 1 — gradient surface: hero areas ONLY, max one per screen */
+/* Material 1 — gradient surface: hero areas ONLY, max one per screen.
+   v2 heroes are layered radial meshes of the palette hues at low opacity
+   over near-white warm bases. */
 .hero-gradient {
-  background: linear-gradient(135deg, #ffe8d6 0%, #ffd6c4 45%, #c9e9e4 100%);
+  background: radial-gradient(
+      120% 90% at 15% 10%,
+      rgba(255, 138, 107, 0.45),
+      transparent 60%
+    ),
+    radial-gradient(
+      110% 80% at 85% 15%,
+      rgba(255, 196, 107, 0.42),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 100% at 80% 90%,
+      rgba(95, 212, 190, 0.4),
+      transparent 65%
+    ),
+    radial-gradient(
+      90% 80% at 15% 85%,
+      rgba(200, 232, 122, 0.3),
+      transparent 60%
+    ),
+    #fff4ec;
+}
+
+/* Run detail's own mesh — warmer, with the rose and lavender hues */
+.hero-gradient-detail {
+  background: radial-gradient(
+      120% 90% at 12% 12%,
+      rgba(255, 138, 107, 0.42),
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 80% at 90% 10%,
+      rgba(255, 94, 126, 0.32),
+      transparent 55%
+    ),
+    radial-gradient(
+      110% 90% at 85% 88%,
+      rgba(255, 196, 107, 0.4),
+      transparent 60%
+    ),
+    radial-gradient(
+      95% 85% at 15% 90%,
+      rgba(183, 139, 232, 0.28),
+      transparent 60%
+    ),
+    #fff1e8;
 }
 
 /* AI-text markdown: keep legacy-markdown content on the glass-card
@@ -72,12 +126,12 @@ body {
   text-decoration: underline;
 }
 
-/* Material 2 — glass: AI-generated content ONLY (insights, ask) */
+/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief) */
 .glass-ai {
   background: linear-gradient(
     135deg,
-    rgba(201, 233, 228, 0.55),
-    rgba(255, 232, 214, 0.5)
+    rgba(95, 212, 190, 0.18),
+    rgba(255, 138, 107, 0.15)
   );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);

@@ -8,7 +8,7 @@ const TABS = [
   { href: "/", label: "Home", icon: Home },
   { href: "/runs", label: "Runs", icon: Activity },
   { href: "/trends", label: "Trends", icon: BarChart3 },
-  { href: "/ask", label: "Ask", icon: MessageCircle },
+  { href: "/ask", label: "Coach", icon: MessageCircle },
 ] as const;
 
 export function BottomNav() {
@@ -30,9 +30,12 @@ export function BottomNav() {
             key={href}
             href={href}
             aria-label={label}
-            className={isActive(href) ? "text-leaf" : "text-nav-idle"}
+            className={`flex flex-col items-center gap-0.5 ${
+              isActive(href) ? "text-leaf" : "text-nav-idle"
+            }`}
           >
             <Icon size={21} strokeWidth={1.75} />
+            <span className="text-[10px] leading-none">{label}</span>
           </Link>
         ))}
       </div>

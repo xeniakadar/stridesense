@@ -17,6 +17,7 @@ import {
   formatGlucose,
   formatPace,
   formatTimeInRange,
+  RUN_TYPE_LABELS,
 } from "@/lib/format";
 import type { Run, SimilarRun } from "@/lib/types";
 
@@ -63,13 +64,13 @@ export default function RunDetailPage() {
   return (
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
-      <div className="hero-gradient rounded-3xl px-5 pt-5 pb-5">
+      <div className="hero-gradient-detail rounded-3xl px-5 pt-5 pb-5">
         <div className="flex justify-between items-center">
-          <Link href="/runs" aria-label="Back to runs" className="text-clay">
+          <Link href="/runs" aria-label="Back to runs" className="text-clay-hero">
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] bg-white/55 text-clay px-2.5 py-0.5 rounded-full capitalize">
+            <span className="text-[11px] bg-white/55 text-clay-hero px-2.5 py-0.5 rounded-full capitalize">
               {run.run_type}
             </span>
             {!demoMode && (
@@ -77,7 +78,7 @@ export default function RunDetailPage() {
                 <Link
                   href={`/runs/${run.id}/edit`}
                   aria-label="Edit run"
-                  className="p-1.5 rounded-full bg-white/55 text-clay hover:bg-white/80"
+                  className="p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
                 >
                   <Pencil size={13} strokeWidth={1.75} />
                 </Link>
@@ -94,10 +95,10 @@ export default function RunDetailPage() {
           </div>
         </div>
 
-        <p className="mt-3 text-4xl font-medium text-ink leading-none">
+        <p className="mt-3 text-5xl font-medium text-ink leading-none">
           {formatDistance(run.distance_km)}
         </p>
-        <p className="mt-1.5 text-xs text-clay">
+        <p className="mt-1.5 text-xs text-clay-hero">
           {formatDate(run.date)}
           {city ? ` · ${city}` : ""}
         </p>
@@ -125,11 +126,16 @@ export default function RunDetailPage() {
 
       {hasGlucose && (
         <Card>
-          <p className="text-[13px] font-medium text-ink mb-2.5">
-            Glucose
-            {run.glucose_time_in_range_pct_during_run !== null &&
-              ` · time in range ${formatTimeInRange(run.glucose_time_in_range_pct_during_run)}`}
-          </p>
+          <div className="flex justify-between items-baseline mb-2.5">
+            <p className="text-[13px] font-medium text-ink">
+              Glucose
+              {run.glucose_time_in_range_pct_during_run !== null &&
+                ` · time in range ${formatTimeInRange(run.glucose_time_in_range_pct_during_run)}`}
+            </p>
+            {demoMode && (
+              <span className="text-[10px] text-sand">glucose simulated</span>
+            )}
+          </div>
           <GlucoseCurveChart runId={run.id} />
           <StatGrid>
             <Stat
@@ -168,7 +174,7 @@ export default function RunDetailPage() {
 
       {hasWeather && (
         <Card>
-          <p className="text-[13px] font-medium text-ink mb-2.5">Weather</p>
+          <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">Weather</p>
           <StatGrid>
             <Stat
               label="Temp at start"
@@ -223,7 +229,7 @@ export default function RunDetailPage() {
       )}
 
       <Card>
-        <p className="text-[13px] font-medium text-ink mb-2.5">Details</p>
+        <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">Details</p>
         <StatGrid>
           <Stat
             label="RPE"
@@ -248,7 +254,7 @@ function HeroStat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <p className="text-[15px] font-medium text-ink">{value}</p>
-      <p className="text-[10.5px] text-clay">{label}</p>
+      <p className="text-[10.5px] text-clay-hero">{label}</p>
     </div>
   );
 }
@@ -314,7 +320,7 @@ function InsightSection({ runId }: { runId: string }) {
   return (
     <section className="glass-ai rounded-2xl p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-medium text-leaf-deep">Insight</h2>
+        <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Insight</h2>
         {!loading && !demoMode && (
           <button
             onClick={handleRegenerate}
@@ -366,8 +372,8 @@ function SimilarRunsSection({ runId }: { runId: string }) {
             href={`/runs/${r.run_id}`}
             className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
           >
-            <span className="text-xs text-ink capitalize">
-              {formatDate(r.date)} · {r.run_type} ·{" "}
+            <span className="text-[15px] text-ink">
+              {formatDate(r.date)} · {RUN_TYPE_LABELS[r.run_type]} ·{" "}
               {formatDistance(r.distance_km)}
             </span>
             <span className="text-[11px] font-medium text-leaf">
