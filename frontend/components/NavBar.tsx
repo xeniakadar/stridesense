@@ -22,16 +22,14 @@ export function NavBar() {
       }
     >
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <Link href="/" className="text-base font-medium text-ink">
-            StrideSense
-          </Link>
-          {demoMode && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-              Demo — seeded data
-            </span>
-          )}
-        </div>
+        <Link href="/" className="text-base font-medium text-ink">
+          StrideSense
+        </Link>
+        {demoMode && (
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+            Demo
+          </span>
+        )}
         {!demoMode && (
           <nav className="flex items-center gap-1.5">
             <Link

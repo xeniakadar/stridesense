@@ -126,6 +126,14 @@ body {
   text-decoration: underline;
 }
 
+/* Horizontally scrollable chip rows scroll without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* Material 2 — glass: AI-generated content ONLY (insights, ask, brief) */
 .glass-ai {
   background: linear-gradient(
