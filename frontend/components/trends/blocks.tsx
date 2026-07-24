@@ -14,6 +14,7 @@ import { TrainingLoadChart } from "@/components/charts/TrainingLoadChart";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { Chip, TertiaryLink } from "@/components/ui";
 import { api } from "@/lib/api";
+import { CARD_TITLES } from "@/lib/cards";
 import {
   flagEmoji,
   formatDate,
@@ -54,24 +55,40 @@ export const DEFAULT_ORDER = [
  * all when the user has glucose data. */
 export function buildRegistry(glucose: GlucoseTrendPoint[]): BlockDef[] {
   const blocks: BlockDef[] = [
-    { id: "cities", title: "Cities", component: CitiesBlock },
-    { id: "training-load", title: "Training load", component: TrainingLoadBlock },
+    { id: "cities", title: CARD_TITLES.cities, component: CitiesBlock },
+    {
+      id: "training-load",
+      title: CARD_TITLES["training-load"],
+      component: TrainingLoadBlock,
+    },
   ];
   if (glucose.length > 0) {
     blocks.push({
       id: "glucose-tir",
-      title: "Glucose · time in range",
+      title: CARD_TITLES["glucose-tir"],
       component: function GlucoseTirBound() {
         return <GlucoseTirBlock data={glucose} />;
       },
     });
   }
   blocks.push(
-    { id: "pace-trend", title: "Easy-run pace trend", component: PaceTrendBlock },
-    { id: "monthly-volume", title: "Monthly volume", component: MonthlyVolumeBlock },
-    { id: "records", title: "Records", component: RecordsBlock },
-    { id: "run-types", title: "Run types", component: RunTypesBlock },
-    { id: "weekly-mileage", title: "Weekly distance", component: WeeklyMileageBlock }
+    {
+      id: "pace-trend",
+      title: CARD_TITLES["pace-trend"],
+      component: PaceTrendBlock,
+    },
+    {
+      id: "monthly-volume",
+      title: CARD_TITLES["monthly-volume"],
+      component: MonthlyVolumeBlock,
+    },
+    { id: "records", title: CARD_TITLES.records, component: RecordsBlock },
+    { id: "run-types", title: CARD_TITLES["run-types"], component: RunTypesBlock },
+    {
+      id: "weekly-mileage",
+      title: CARD_TITLES["weekly-mileage"],
+      component: WeeklyMileageBlock,
+    }
   );
   return blocks;
 }
@@ -133,7 +150,7 @@ function CitiesBlock() {
       <span className="flex justify-between items-center">
         <span>
           <span className="block text-[20px] font-medium text-ink">
-            🌍 Cities
+            {CARD_TITLES.cities}
           </span>
           <span className="block text-[13px] text-clay mt-0.5">
             everywhere you've run
@@ -186,7 +203,7 @@ function TrainingLoadBlock() {
 
   return (
     <ChartCard
-      title="Training load"
+      title={CARD_TITLES["training-load"]}
       action={
         <span className="flex items-center gap-1.5">
           <button
@@ -224,7 +241,7 @@ function TrainingLoadBlock() {
 
 function GlucoseTirBlock({ data }: { data: GlucoseTrendPoint[] }) {
   return (
-    <ChartCard title="Glucose · time in range" subtitle="90 days · 7-day avg">
+    <ChartCard title={CARD_TITLES["glucose-tir"]} subtitle="90 days · 7-day avg">
       <GlucoseTirChart data={data} />
     </ChartCard>
   );
@@ -239,7 +256,7 @@ function PaceTrendBlock() {
       .catch(() => setPace([]));
   }, []);
   return (
-    <ChartCard title="Easy-run pace trend" subtitle="last 90 days">
+    <ChartCard title={CARD_TITLES["pace-trend"]} subtitle="last 90 days">
       {pace ? <PaceTrendChart data={pace} /> : <Loading />}
     </ChartCard>
   );
@@ -254,7 +271,7 @@ function MonthlyVolumeBlock() {
       .catch(() => setVolume([]));
   }, []);
   return (
-    <ChartCard title="Monthly volume" subtitle="last 12 months">
+    <ChartCard title={CARD_TITLES["monthly-volume"]} subtitle="last 12 months">
       {volume ? <MonthlyVolumeChart data={volume} /> : <Loading />}
     </ChartCard>
   );
@@ -284,7 +301,7 @@ function RecordsBlock() {
   }, []);
 
   return (
-    <ChartCard title="Records" subtitle="all time">
+    <ChartCard title={CARD_TITLES.records} subtitle="all time">
       {records === null ? (
         <Loading />
       ) : records.length === 0 ? (
@@ -337,7 +354,7 @@ function RunTypesBlock() {
       .catch(() => setDistribution([]));
   }, []);
   return (
-    <ChartCard title="Run types" subtitle="last 30 days">
+    <ChartCard title={CARD_TITLES["run-types"]} subtitle="last 30 days">
       {distribution ? (
         <RunTypeDistributionChart data={distribution} />
       ) : (
@@ -356,7 +373,7 @@ function WeeklyMileageBlock() {
       .catch(() => setMileage([]));
   }, []);
   return (
-    <ChartCard title="Weekly distance" subtitle="last 12 weeks">
+    <ChartCard title={CARD_TITLES["weekly-mileage"]} subtitle="last 12 weeks">
       {mileage ? <WeeklyMileageChart data={mileage} /> : <Loading />}
     </ChartCard>
   );

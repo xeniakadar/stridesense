@@ -87,7 +87,7 @@ export function AskSection() {
           <button
             type="submit"
             disabled={loading || !question.trim()}
-            className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:bg-leaf-soft disabled:text-leaf-deep/70"
+            className="tap-target px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:bg-leaf-soft disabled:text-leaf-deep/70"
           >
             {loading ? "Thinking…" : "Ask"}
           </button>

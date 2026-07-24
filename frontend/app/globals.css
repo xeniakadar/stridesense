@@ -165,6 +165,53 @@ body {
     #fff7f0;
 }
 
+/* Leaflet chrome, restyled to the card language (Cities map). The cream
+   canvas also means any letterboxing at low zoom reads as page
+   background, never a dead grey band. */
+.leaflet-container {
+  background: #fffbf7;
+  font-family: inherit;
+}
+.leaflet-control-zoom.leaflet-bar {
+  border: none;
+  box-shadow: 0 2px 10px rgba(74, 36, 16, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+}
+/* 44×44 touch targets (SS-13) */
+.leaflet-control-zoom.leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  background: #fffbf7;
+  color: #4a2410;
+  border-bottom: 0.5px solid #f2e7da;
+  font-weight: 400;
+}
+.leaflet-control-zoom.leaflet-bar a:last-child {
+  border-bottom: none;
+}
+.leaflet-control-zoom.leaflet-bar a.leaflet-disabled {
+  color: #d6c3af;
+}
+/* Permanent city labels on the largest bubbles — bare ink text, no
+   tooltip chrome */
+.city-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #4a2410;
+  font-size: 11px;
+  font-weight: 500;
+  text-shadow:
+    0 0 3px #fffbf7,
+    0 0 6px #fffbf7;
+  padding: 0;
+}
+.city-label::before {
+  display: none;
+}
+
 /* Minimum touch target — expands the tappable area of a small control to
    at least 44×44 without changing its visual size (the pseudo-element
    receives the events on behalf of the control) */
