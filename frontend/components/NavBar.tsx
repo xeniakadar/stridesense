@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useDemoMode } from "@/components/DemoProvider";
+import { Logo } from "@/components/Logo";
 import { Chip } from "@/components/ui";
 
 export function NavBar() {
@@ -23,8 +24,8 @@ export function NavBar() {
       }
     >
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="text-base font-medium text-ink">
-          StrideSense
+        <Link href="/" className="tap-target">
+          <Logo size={16} />
         </Link>
         {demoMode && (
           <Chip
