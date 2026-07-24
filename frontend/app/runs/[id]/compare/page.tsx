@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Line,
   LineChart,
-  ReferenceDot,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -260,6 +259,48 @@ function interpret(comparison: Comparison, runType: string): string {
   return `Right in line with ${typical}.`;
 }
 
+/** Per-point dot renderer that makes the compared run unmissable: filled,
+ * larger, and labeled — the comparables stay small open circles. (The old
+ * ReferenceDot overlay drew an identical open circle over the target and
+ * left it indistinguishable.) */
+function RunDot(props: {
+  cx?: number;
+  cy?: number;
+  payload?: { isTarget?: boolean };
+}) {
+  const { cx, cy, payload } = props;
+  if (cx == null || cy == null) return null;
+  if (!payload?.isTarget) {
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={3.5}
+        fill="#fff"
+        stroke={LEAF_MID}
+        strokeWidth={1.5}
+      />
+    );
+  }
+  // Label above the marker unless that would clip at the top margin
+  const labelAbove = cy > 26;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={6} fill={LEAF_BRIGHT} stroke="#fff" strokeWidth={2} />
+      <text
+        x={cx}
+        y={labelAbove ? cy - 11 : cy + 18}
+        textAnchor="middle"
+        fontSize={10}
+        fontWeight={500}
+        fill={AXIS}
+      >
+        This run
+      </text>
+    </g>
+  );
+}
+
 /** Pace by date across the comparables and this run — one connected line
  * (it's all the same runner over time), with this run's point emphasized
  * in solid leaf. Y axis is reversed so faster sits higher. */
@@ -291,7 +332,6 @@ function PaceLineChart({
     return <p className="text-xs text-sand">No pace data to compare.</p>;
   }
   rows.sort((a, b) => a.ts - b.ts);
-  const target = rows.find((r) => r.isTarget);
 
   // Dots are the runs; the line is only the pattern through them — a
   // least-squares fit by date, not a point-to-point connection
@@ -358,28 +398,16 @@ function PaceLineChart({
         <Line
           dataKey="pace"
           stroke="none"
-          dot={{ r: 4, fill: "#fff", stroke: LEAF_MID, strokeWidth: 2 }}
+          dot={<RunDot />}
           activeDot={{ r: 5, fill: LEAF_MID, stroke: "#fff", strokeWidth: 2 }}
         />
-        {target && (
-          // This run: solid and a notch brighter than the hollow
-          // leaf-mid comparables — no text label needed
-          <ReferenceDot
-            x={target.ts}
-            y={target.pace}
-            r={5.5}
-            fill={LEAF_BRIGHT}
-            stroke="#fff"
-            strokeWidth={2}
-          />
-        )}
       </LineChart>
     </ResponsiveContainer>
     <ChartLegend
       items={[
         { label: "This run", color: LEAF_BRIGHT, shape: "dot" },
         { label: "Comparable runs", color: LEAF_MID, shape: "dot" },
-        { label: "Trend", color: LEAF_SOFT, dashed: true },
+        { label: "Trend — higher is faster (pace axis is inverted)", color: LEAF_SOFT, dashed: true },
       ]}
     />
     </>
