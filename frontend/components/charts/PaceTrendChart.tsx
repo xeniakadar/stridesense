@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { LEAF, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort, formatPace } from "@/lib/format";
 import type { PaceTrendPoint } from "@/lib/types";
 
@@ -33,13 +33,14 @@ export function PaceTrendChart({ data }: { data: PaceTrendPoint[] }) {
         <XAxis
           dataKey="date"
           tickFormatter={formatDateShort}
-          tick={{ fontSize: 11, fill: SAND }}
+          minTickGap={28}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={(v: number) => formatPace(v)}
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={70}

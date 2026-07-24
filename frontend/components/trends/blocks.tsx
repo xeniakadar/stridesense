@@ -77,17 +77,19 @@ export function buildRegistry(glucose: GlucoseTrendPoint[]): BlockDef[] {
 function ChartCard({
   title,
   subtitle,
+  action,
   children,
 }: {
   title: string;
   subtitle?: string;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
-      <div className="mb-3 flex justify-between items-baseline">
-        <h2 className="text-[13px] font-medium text-ink">{title}</h2>
-        {subtitle && <p className="text-[11px] text-sand">{subtitle}</p>}
+      <div className="mb-3 flex justify-between items-center gap-2">
+        <h2 className="text-[20px] font-medium text-ink leading-snug">{title}</h2>
+        {action ?? (subtitle && <p className="text-[13px] text-sand">{subtitle}</p>)}
       </div>
       {children}
     </div>
@@ -126,10 +128,10 @@ function CitiesBlock() {
     >
       <span className="flex justify-between items-center">
         <span>
-          <span className="block text-[13.5px] font-medium text-ink">
+          <span className="block text-[20px] font-medium text-ink">
             🌍 Cities
           </span>
-          <span className="block text-[11.5px] text-clay mt-0.5">
+          <span className="block text-[13px] text-clay mt-0.5">
             everywhere you've run
           </span>
         </span>
@@ -152,24 +154,62 @@ function CitiesBlock() {
   );
 }
 
+const LOAD_RANGES = [
+  { key: "90d", label: "90d", days: 90 },
+  { key: "1y", label: "1y", days: 365 },
+  { key: "all", label: "all", days: null },
+] as const;
+type LoadRangeKey = (typeof LOAD_RANGES)[number]["key"];
+
 function TrainingLoadBlock() {
   const [load, setLoad] = useState<LoadPoint[] | null>(null);
+  // Default window also hides the chronic-baseline cold-start spike
+  const [range, setRange] = useState<LoadRangeKey>("90d");
   useEffect(() => {
     api
       .getTrainingLoad()
       .then(setLoad)
       .catch(() => setLoad([]));
   }, []);
+
+  const days = LOAD_RANGES.find((r) => r.key === range)?.days ?? null;
+  const cutoff = days ? new Date(Date.now() - days * 86_400_000) : null;
+  const filtered =
+    load === null
+      ? null
+      : cutoff
+        ? load.filter((p) => new Date(p.date) >= cutoff)
+        : load;
+
   return (
-    <ChartCard title="Training load" subtitle="ACWR · optimal band shaded">
-      {load ? <TrainingLoadChart data={load} /> : <Loading />}
+    <ChartCard
+      title="Training load"
+      action={
+        <span className="flex bg-leaf-pale/50 rounded-full p-[2px]">
+          {LOAD_RANGES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => setRange(r.key)}
+              className={`text-[11px] px-2.5 py-0.5 rounded-full ${
+                range === r.key
+                  ? "bg-white text-leaf-deep font-medium"
+                  : "text-clay"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </span>
+      }
+    >
+      {filtered ? <TrainingLoadChart data={filtered} /> : <Loading />}
     </ChartCard>
   );
 }
 
 function GlucoseTirBlock({ data }: { data: GlucoseTrendPoint[] }) {
   return (
-    <ChartCard title="Glucose · time in range" subtitle="last 90 days">
+    <ChartCard title="Time in range" subtitle="90 days · 7-day avg">
       <GlucoseTirChart data={data} />
     </ChartCard>
   );
@@ -239,14 +279,14 @@ function RecordsBlock() {
           {records.map((record) => {
             const row = (
               <div className="flex justify-between items-baseline py-2">
-                <span className="text-[13px] text-ink">
+                <span className="text-[15px] text-ink">
                   {RECORD_LABELS[record.kind] ?? record.kind}
                 </span>
                 <span className="text-right">
-                  <span className="block text-[13px] font-medium text-leaf-deep">
+                  <span className="block text-[15px] font-medium text-leaf-deep">
                     {recordValue(record)}
                   </span>
-                  <span className="block text-[10.5px] text-sand">
+                  <span className="block text-[12px] text-sand">
                     {record.kind === "biggest_week" ? "week of " : ""}
                     {formatDate(record.date)}
                   </span>

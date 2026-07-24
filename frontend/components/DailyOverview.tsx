@@ -18,7 +18,7 @@ export function DailyOverview() {
 
   return (
     <div className="glass-ai rounded-2xl p-4">
-      <h2 className="text-[13px] font-medium text-leaf-deep">Daily overview</h2>
+      <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Daily overview</h2>
       {unavailable ? (
         <p className="mt-2 text-sm text-clay">
           The overview isn't available right now — check back in a bit.

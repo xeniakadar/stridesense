@@ -17,6 +17,7 @@ import {
 
 import { api, ApiError } from "@/lib/api";
 import {
+  AXIS,
   LEAF_BRIGHT,
   LEAF_MID,
   LEAF_SOFT,
@@ -27,6 +28,7 @@ import {
 import {
   cityFromLat,
   formatDate,
+  formatDistance,
   formatMonthYear,
   formatPace,
 } from "@/lib/format";
@@ -74,7 +76,7 @@ export default function CompareRunPage() {
           <span className="w-[18px]" />
         </div>
         <p className="mt-2.5 text-xs text-clay-hero">
-          {formatDate(run.date)} · {run.run_type} · {run.distance_km} km
+          {formatDate(run.date)} · {run.run_type} · {formatDistance(run.distance_km)}
           {city ? ` · ${city}` : ""}
         </p>
         <p className="mt-0.5 text-[11.5px] text-clay-hero">
@@ -105,14 +107,14 @@ export default function CompareRunPage() {
           )}
 
           <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
-            <p className="text-[13px] font-medium text-ink mb-2.5">
+            <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">
               Pace over time, this run highlighted
             </p>
             <PaceLineChart run={run} similar={similar} />
           </div>
 
           <section>
-            <p className="text-[13px] font-medium text-ink mb-2 px-1">
+            <p className="text-[14px] font-medium text-ink mb-2 px-1">
               The {n} comparable{n === 1 ? "" : "s"}
             </p>
             <div className="space-y-1.5">
@@ -122,8 +124,8 @@ export default function CompareRunPage() {
                   href={`/runs/${s.run_id}`}
                   className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
                 >
-                  <span className="text-xs text-ink">
-                    {formatDate(s.date)} · {s.distance_km} km
+                  <span className="text-[15px] text-ink">
+                    {formatDate(s.date)} · {formatDistance(s.distance_km)}
                     {s.weather_temp_start_c !== null
                       ? ` · ${Math.round(s.weather_temp_start_c)}°C`
                       : ""}
@@ -323,13 +325,13 @@ function PaceLineChart({
           tickFormatter={(ts: number) =>
             formatMonthYear(new Date(ts).toISOString())
           }
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           tickFormatter={(v: number) => formatPace(v).replace("/km", "")}
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={44}

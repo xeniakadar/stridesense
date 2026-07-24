@@ -14,7 +14,8 @@ import {
 } from "recharts";
 
 import { api } from "@/lib/api";
-import { LEAF, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
+import { formatMinutesShort } from "@/lib/format";
 import type { GlucoseSample } from "@/lib/types";
 
 // Standard non-diabetic in-range band (mg/dL) — same bounds the backend
@@ -49,10 +50,24 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
 
   const minPoint = data.reduce((a, b) => (b.glucose < a.glucose ? b : a));
   const maxPoint = data.reduce((a, b) => (b.glucose > a.glucose ? b : a));
+  // A label on a point near either end of the x-range collides with the
+  // axis or clips at the edge — hang it sideways there instead
+  const span = data[data.length - 1].elapsedMinutes - data[0].elapsedMinutes || 1;
+  const labelPosition = (
+    point: { elapsedMinutes: number },
+    vertical: "top" | "bottom"
+  ): "left" | "right" | "top" | "bottom" => {
+    const t = (point.elapsedMinutes - data[0].elapsedMinutes) / span;
+    if (t < 0.12) return "right";
+    if (t > 0.88) return "left";
+    return vertical;
+  };
+  // Domain hugs the data (the in-range band clips to the visible window)
+  // instead of always spanning 60-150 and wasting vertical space
   const values = data.map((d) => d.glucose);
   const yDomain: [number, number] = [
-    Math.min(RANGE_LOW, ...values) - 10,
-    Math.max(RANGE_HIGH, ...values) + 10,
+    Math.floor(Math.min(...values) - 10),
+    Math.ceil(Math.max(...values) + 10),
   ];
 
   return (
@@ -66,14 +81,15 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
           <XAxis
             dataKey="elapsedMinutes"
             type="number"
-            unit=" min"
-            tick={{ fontSize: 11, fill: SAND }}
+            tickFormatter={(m) => formatMinutesShort(Number(m))}
+            minTickGap={28}
+            tick={{ fontSize: 11, fill: AXIS }}
             axisLine={false}
             tickLine={false}
             domain={["dataMin", "dataMax"]}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: SAND }}
+            tick={{ fontSize: 11, fill: AXIS }}
             axisLine={false}
             tickLine={false}
             width={40}
@@ -82,6 +98,7 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
           <ReferenceArea
             y1={RANGE_LOW}
             y2={RANGE_HIGH}
+            ifOverflow="hidden"
             fill={LEAF}
             fillOpacity={0.12}
             strokeOpacity={0}
@@ -107,9 +124,10 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             strokeWidth={2}
             label={{
               value: `min ${Math.round(minPoint.glucose)}`,
-              position: "bottom",
+              position: labelPosition(minPoint, "bottom"),
+              offset: 10,
               fontSize: 11,
-              fill: SAND,
+              fill: AXIS,
             }}
           />
           <ReferenceDot
@@ -121,9 +139,10 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             strokeWidth={2}
             label={{
               value: `max ${Math.round(maxPoint.glucose)}`,
-              position: "top",
+              position: labelPosition(maxPoint, "top"),
+              offset: 10,
               fontSize: 11,
-              fill: SAND,
+              fill: AXIS,
             }}
           />
         </LineChart>

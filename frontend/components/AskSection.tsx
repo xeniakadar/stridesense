@@ -50,8 +50,8 @@ export function AskSection() {
   return (
     <div className="glass-ai rounded-2xl p-4">
       <div className="mb-4">
-        <h2 className="text-[13px] font-medium text-leaf-deep">Ask your history</h2>
-        <p className="text-[11px] text-clay mt-0.5">
+        <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Ask your history</h2>
+        <p className="text-[13px] text-clay mt-0.5">
           {demoMode
             ? "Free-form questions are disabled in the demo — tap an example below."
             : "e.g. “how do I handle hot weather?” — answers cite your own runs"}

@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF_MID, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatMonthYear } from "@/lib/format";
 import type { MonthlyVolumePoint } from "@/lib/types";
 
@@ -22,13 +22,14 @@ export function MonthlyVolumeChart({ data }: { data: MonthlyVolumePoint[] }) {
         <XAxis
           dataKey="month"
           tickFormatter={formatMonthYear}
-          tick={{ fontSize: 10, fill: SAND }}
+          minTickGap={24}
+          tick={{ fontSize: 10, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           unit=" km"
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={52}

@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { LEAF_MID, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF_MID, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { RUN_TYPE_LABELS } from "@/lib/format";
 import type { RunTypeDistributionItem } from "@/lib/types";
 
@@ -42,14 +42,14 @@ export function RunTypeDistributionChart({
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} horizontal={false} />
         <XAxis
           type="number"
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           type="category"
           dataKey="label"
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={80}

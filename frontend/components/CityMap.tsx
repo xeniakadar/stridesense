@@ -14,7 +14,7 @@ import {
 } from "react-leaflet";
 
 import { LEAF, LEAF_MID, LEAF_SOFT } from "@/lib/colors";
-import { flagEmoji, formatMonthYear } from "@/lib/format";
+import { flagEmoji, formatKmTotal, formatMonthYear } from "@/lib/format";
 import type { CityStats } from "@/lib/types";
 
 // Only ever rendered via next/dynamic with ssr:false — leaflet needs window.
@@ -109,7 +109,7 @@ export function CityMap({ cities }: { cities: CityStats[] }) {
           </div>
           <p className="mt-1 text-[11.5px] text-clay">
             {selected.run_count} run{selected.run_count === 1 ? "" : "s"} ·{" "}
-            {selected.total_km} km · {dateRange(selected)}
+            {formatKmTotal(selected.total_km)} · {dateRange(selected)}
             {selected.min_temp_c !== null && selected.max_temp_c !== null
               ? ` · ${Math.round(selected.min_temp_c)}–${Math.round(selected.max_temp_c)}°C`
               : ""}

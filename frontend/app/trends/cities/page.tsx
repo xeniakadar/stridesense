@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
-import { flagEmoji } from "@/lib/format";
+import { flagEmoji, formatKmTotal } from "@/lib/format";
 import type { CitiesResponse, CityStats } from "@/lib/types";
 
 // Leaflet touches window at import time — client-only, no SSR
@@ -87,7 +87,7 @@ export default function CitiesPage() {
               className="bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-3"
             >
               <div className="flex justify-between items-center">
-                <p className="text-[13.5px] font-medium text-ink">
+                <p className="text-[15px] font-medium text-ink">
                   {flagEmoji(city.country_code)} {city.name}
                 </p>
                 {city.has_race && (
@@ -96,9 +96,9 @@ export default function CitiesPage() {
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 text-[11.5px] text-clay">
+              <p className="mt-0.5 text-[13px] text-clay">
                 {city.run_count} run{city.run_count === 1 ? "" : "s"} ·{" "}
-                {city.total_km} km
+                {formatKmTotal(city.total_km)}
               </p>
               <Link
                 href={viewRunsHref(city)}

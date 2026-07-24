@@ -27,7 +27,20 @@ export function formatDuration(seconds: number | null | undefined): string {
 
 export function formatDistance(km: number | null | undefined): string {
   if (km === null || km === undefined) return "—";
-  return `${km.toFixed(2)} km`;
+  return `${km.toFixed(1)} km`;
+}
+
+// For aggregates (weekly/city/monthly totals) — whole km read faster
+export function formatKmTotal(km: number | null | undefined): string {
+  if (km === null || km === undefined) return "—";
+  return `${Math.round(km)} km`;
+}
+
+// Compact duration for axis ticks: "39m", "1:05h" — never raw decimals
+export function formatMinutesShort(totalMinutes: number): string {
+  const m = Math.round(totalMinutes);
+  if (m < 60) return `${m}m`;
+  return `${Math.floor(m / 60)}:${(m % 60).toString().padStart(2, "0")}h`;
 }
 
 export function formatDate(iso: string): string {
