@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, RUN_TYPE_LABELS } from "@/lib/format";
@@ -103,7 +104,7 @@ export function AskSection() {
 
       {result && (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-ink whitespace-pre-wrap">{result.answer}</p>
+          <AiText text={result.answer} />
           {result.cited_runs.length > 0 && (
             <div>
               <p className="text-[11px] text-clay mb-1">Based on these runs:</p>

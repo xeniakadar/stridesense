@@ -106,6 +106,7 @@ Rules:
 - Compare the run to the provided comparable runs when relevant.
 - Mention training load (ACWR) only if it's provided.
 - Be concise: 3-5 sentences. Plain language, no jargon dumps.
+- Output plain prose only: no markdown, no headers, no bold, no lists.
 - You are not a doctor; do not give medical advice. For glucose, describe \
 patterns factually (e.g. "glucose trended down across the run") without \
 diagnosing.

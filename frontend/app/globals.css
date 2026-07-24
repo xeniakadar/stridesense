@@ -40,22 +40,90 @@ body {
    v2 heroes are layered radial meshes of the palette hues at low opacity
    over near-white warm bases. */
 .hero-gradient {
-  background:
-    radial-gradient(120% 90% at 15% 10%, rgba(255, 138, 107, 0.45), transparent 60%),
-    radial-gradient(110% 80% at 85% 15%, rgba(255, 196, 107, 0.42), transparent 60%),
-    radial-gradient(120% 100% at 80% 90%, rgba(95, 212, 190, 0.4), transparent 65%),
-    radial-gradient(90% 80% at 15% 85%, rgba(200, 232, 122, 0.3), transparent 60%),
+  background: radial-gradient(
+      120% 90% at 15% 10%,
+      rgba(255, 138, 107, 0.45),
+      transparent 60%
+    ),
+    radial-gradient(
+      110% 80% at 85% 15%,
+      rgba(255, 196, 107, 0.42),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 100% at 80% 90%,
+      rgba(95, 212, 190, 0.4),
+      transparent 65%
+    ),
+    radial-gradient(
+      90% 80% at 15% 85%,
+      rgba(200, 232, 122, 0.3),
+      transparent 60%
+    ),
     #fff4ec;
 }
 
 /* Run detail's own mesh — warmer, with the rose and lavender hues */
 .hero-gradient-detail {
-  background:
-    radial-gradient(120% 90% at 12% 12%, rgba(255, 138, 107, 0.42), transparent 60%),
-    radial-gradient(100% 80% at 90% 10%, rgba(255, 94, 126, 0.32), transparent 55%),
-    radial-gradient(110% 90% at 85% 88%, rgba(255, 196, 107, 0.4), transparent 60%),
-    radial-gradient(95% 85% at 15% 90%, rgba(183, 139, 232, 0.28), transparent 60%),
+  background: radial-gradient(
+      120% 90% at 12% 12%,
+      rgba(255, 138, 107, 0.42),
+      transparent 60%
+    ),
+    radial-gradient(
+      100% 80% at 90% 10%,
+      rgba(255, 94, 126, 0.32),
+      transparent 55%
+    ),
+    radial-gradient(
+      110% 90% at 85% 88%,
+      rgba(255, 196, 107, 0.4),
+      transparent 60%
+    ),
+    radial-gradient(
+      95% 85% at 15% 90%,
+      rgba(183, 139, 232, 0.28),
+      transparent 60%
+    ),
     #fff1e8;
+}
+
+/* AI-text markdown: keep legacy-markdown content on the glass-card
+   typography scale — nothing shouts, nothing changes size much */
+.ai-text :is(p, ul, ol) + :is(p, ul, ol) {
+  margin-top: 0.5rem;
+}
+.ai-text ul {
+  list-style: disc;
+  padding-left: 1.1rem;
+}
+.ai-text ol {
+  list-style: decimal;
+  padding-left: 1.1rem;
+}
+.ai-text li + li {
+  margin-top: 0.15rem;
+}
+.ai-text strong {
+  font-weight: 500;
+}
+.ai-text em {
+  font-style: italic;
+}
+.ai-text :is(h1, h2, h3, h4, h5, h6) {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-top: 0.5rem;
+}
+.ai-text code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8em;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0.05rem 0.3rem;
+  border-radius: 0.375rem;
+}
+.ai-text a {
+  text-decoration: underline;
 }
 
 /* Material 2 — glass: AI-generated content ONLY (insights, ask, brief) */
