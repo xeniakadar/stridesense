@@ -20,6 +20,16 @@ import {
 } from "@/lib/format";
 import type { LoadPoint, Run, WeeklyMileagePoint } from "@/lib/types";
 
+// Deterministic per-zone suggestion (same permissive, non-prescriptive
+// voice as the daily brief) — no LLM involved
+const TODAY_RECS: Record<string, { title: string; km: string }> = {
+  optimal: { title: "Easy run", km: "6–8 km" },
+  building: { title: "Easy run", km: "6–8 km" },
+  detraining: { title: "Easy run", km: "6–8 km" },
+  caution: { title: "Short & easy", km: "3–5 km" },
+  danger: { title: "Recovery day", km: "Rest or short jog" },
+};
+
 export default function DashboardPage() {
   const demoMode = useDemoMode();
   const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
@@ -49,6 +59,7 @@ export default function DashboardPage() {
       ? runs.filter((r) => new Date(r.date) >= weekStart).length
       : null;
   const recent = runs?.slice(0, 3) ?? [];
+  const rec = load?.zone ? TODAY_RECS[load.zone] : null;
 
   return (
     <div className="space-y-3">
@@ -56,18 +67,37 @@ export default function DashboardPage() {
           the column padding to the screen edges and reaches up behind the
           transparent top bar. */}
       <div className="gradient-overview -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
-        <p className="text-[13px] text-clay-hero">Hi Xenia</p>
-        <p className="mt-2 text-5xl font-medium text-ink leading-tight">
-          {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}
-        </p>
-        <p className="mt-0.5 mb-3 text-xs text-clay-hero">
-          this week
-          {runsThisWeek !== null
-            ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
-            : ""}
-        </p>
+        {/* True two-column row: metric left, compact Today panel right,
+            vertically centred beside it. flex-wrap lets the panel drop
+            just below the metric on very narrow screens. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div>
+            <p className="text-[13px] text-clay-hero">Hi Xenia</p>
+            <p className="mt-2 text-5xl font-medium text-ink leading-tight">
+              {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}
+            </p>
+            <p className="mt-0.5 text-xs text-clay-hero">
+              this week
+              {runsThisWeek !== null
+                ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
+                : ""}
+            </p>
+          </div>
+          {rec && (
+            // Compact and secondary: subtle translucent panel, no border
+            <div className="w-[180px] bg-white/35 rounded-2xl px-3.5 py-2.5">
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-clay-hero/90">
+                Today
+              </p>
+              <p className="mt-0.5 text-[15px] font-medium text-ink">
+                {rec.title}
+              </p>
+              <p className="text-[12px] text-clay-hero">{rec.km}</p>
+            </div>
+          )}
+        </div>
         {load?.acwr != null && (
-          <>
+          <div className="mt-3">
             <button
               type="button"
               onClick={() => setShowAcwrInfo((s) => !s)}
@@ -81,7 +111,7 @@ export default function DashboardPage() {
               <Info size={12} strokeWidth={1.75} className="text-leaf-deep/70" />
             </button>
             {showAcwrInfo && <AcwrExplainerPanel className="mt-2 max-w-sm" />}
-          </>
+          </div>
         )}
       </div>
 
