@@ -39,8 +39,10 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-3">
-      {/* Hero — the screen's single gradient surface */}
-      <div className="hero-gradient rounded-3xl px-5 pt-6 pb-5">
+      {/* Hero — the screen's single gradient surface. Full-bleed: escapes
+          the column padding to the screen edges and reaches up behind the
+          transparent top bar. */}
+      <div className="hero-gradient -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
         <p className="text-[13px] text-clay-hero">Hi Xenia</p>
         <p className="mt-2 text-4xl font-medium text-ink leading-tight">
           {thisWeek ? `${thisWeek.distance_km.toFixed(1)} km` : "— km"}
