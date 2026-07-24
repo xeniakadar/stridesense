@@ -31,7 +31,8 @@ export function BottomNav() {
             href={href}
             aria-label={label}
             className={`tap-target flex flex-col items-center gap-0.5 ${
-              isActive(href) ? "text-leaf" : "text-nav-idle"
+              // leaf-deep, not leaf: the 10px active label needs AA too
+              isActive(href) ? "text-leaf-deep" : "text-nav-idle"
             }`}
           >
             <Icon size={21} strokeWidth={1.75} />
