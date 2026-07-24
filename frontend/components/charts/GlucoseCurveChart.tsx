@@ -13,6 +13,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartLegend } from "@/components/charts/ChartLegend";
 import { api } from "@/lib/api";
 import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatMinutesShort } from "@/lib/format";
@@ -89,6 +90,7 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             domain={["dataMin", "dataMax"]}
           />
           <YAxis
+            allowDecimals={false}
             tick={{ fontSize: 11, fill: AXIS }}
             axisLine={false}
             tickLine={false}
@@ -102,6 +104,12 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
             fill={LEAF}
             fillOpacity={0.12}
             strokeOpacity={0}
+            label={{
+              value: `in range ${RANGE_LOW}–${RANGE_HIGH}`,
+              position: "insideTopRight",
+              fontSize: 10,
+              fill: AXIS,
+            }}
           />
           <Tooltip
             {...TOOLTIP_STYLE}
@@ -147,6 +155,16 @@ export function GlucoseCurveChart({ runId }: { runId: string }) {
           />
         </LineChart>
       </ResponsiveContainer>
+      <ChartLegend
+        items={[
+          { label: "Glucose (mg/dL)", color: LEAF },
+          {
+            label: `In range (${RANGE_LOW}–${RANGE_HIGH} mg/dL)`,
+            color: LEAF,
+            shape: "band",
+          },
+        ]}
+      />
     </div>
   );
 }

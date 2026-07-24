@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartLegend } from "@/components/charts/ChartLegend";
 import { AXIS, LEAF, LEAF_SOFT, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { GlucoseTrendPoint } from "@/lib/types";
@@ -24,6 +25,7 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
   });
 
   return (
+    <>
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={smoothed} margin={{ top: 12, right: 12, bottom: 4, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
@@ -37,6 +39,7 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
         />
         <YAxis
           unit="%"
+          allowDecimals={false}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
@@ -70,5 +73,12 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
         />
       </LineChart>
     </ResponsiveContainer>
+    <ChartLegend
+      items={[
+        { label: "7-day avg", color: LEAF },
+        { label: "Daily", color: LEAF_SOFT },
+      ]}
+    />
+    </>
   );
 }

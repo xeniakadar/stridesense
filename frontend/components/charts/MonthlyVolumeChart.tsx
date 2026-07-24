@@ -29,6 +29,7 @@ export function MonthlyVolumeChart({ data }: { data: MonthlyVolumePoint[] }) {
         />
         <YAxis
           unit=" km"
+          allowDecimals={false}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}

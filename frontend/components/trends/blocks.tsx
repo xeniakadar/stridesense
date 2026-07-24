@@ -9,6 +9,7 @@ import { PaceTrendChart } from "@/components/charts/PaceTrendChart";
 import { RunTypeDistributionChart } from "@/components/charts/RunTypeDistributionChart";
 import { TrainingLoadChart } from "@/components/charts/TrainingLoadChart";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
+import { Chip, TertiaryLink } from "@/components/ui";
 import { api } from "@/lib/api";
 import {
   flagEmoji,
@@ -67,7 +68,7 @@ export function buildRegistry(glucose: GlucoseTrendPoint[]): BlockDef[] {
     { id: "monthly-volume", title: "Monthly volume", component: MonthlyVolumeBlock },
     { id: "records", title: "Records", component: RecordsBlock },
     { id: "run-types", title: "Run types", component: RunTypesBlock },
-    { id: "weekly-mileage", title: "Weekly mileage", component: WeeklyMileageBlock }
+    { id: "weekly-mileage", title: "Weekly distance", component: WeeklyMileageBlock }
   );
   return blocks;
 }
@@ -135,18 +136,16 @@ function CitiesBlock() {
             everywhere you've run
           </span>
         </span>
-        <span className="text-sm text-leaf">→</span>
+        {/* Whole card is the link — the trailing marker is decorative */}
+        <TertiaryLink>View all</TertiaryLink>
       </span>
       {recent.length > 0 && (
         <span className="flex flex-wrap gap-1.5 mt-2.5">
           {recent.map((city) => (
-            <span
-              key={`${city.name}-${city.lat}-${city.lng}`}
-              className="text-[11px] bg-leaf-pale/70 text-leaf-deep px-2.5 py-1 rounded-full"
-            >
+            <Chip key={`${city.name}-${city.lat}-${city.lng}`} tone="green">
               {flagEmoji(city.country_code)} {city.name} ·{" "}
               {formatMonthYear(city.last_run_date)}
-            </span>
+            </Chip>
           ))}
         </span>
       )}
@@ -190,7 +189,7 @@ function TrainingLoadBlock() {
             <button
               key={r.key}
               onClick={() => setRange(r.key)}
-              className={`text-[11px] px-2.5 py-0.5 rounded-full ${
+              className={`tap-target text-[11px] px-2.5 py-0.5 rounded-full ${
                 range === r.key
                   ? "bg-white text-leaf-deep font-medium"
                   : "text-clay"
@@ -209,7 +208,7 @@ function TrainingLoadBlock() {
 
 function GlucoseTirBlock({ data }: { data: GlucoseTrendPoint[] }) {
   return (
-    <ChartCard title="Time in range" subtitle="90 days · 7-day avg">
+    <ChartCard title="Glucose · time in range" subtitle="90 days · 7-day avg">
       <GlucoseTirChart data={data} />
     </ChartCard>
   );
@@ -341,7 +340,7 @@ function WeeklyMileageBlock() {
       .catch(() => setMileage([]));
   }, []);
   return (
-    <ChartCard title="Weekly mileage" subtitle="last 12 weeks">
+    <ChartCard title="Weekly distance" subtitle="last 12 weeks">
       {mileage ? <WeeklyMileageChart data={mileage} /> : <Loading />}
     </ChartCard>
   );

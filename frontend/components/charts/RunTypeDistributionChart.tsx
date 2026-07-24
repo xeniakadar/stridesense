@@ -42,6 +42,7 @@ export function RunTypeDistributionChart({
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} horizontal={false} />
         <XAxis
           type="number"
+          allowDecimals={false}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}

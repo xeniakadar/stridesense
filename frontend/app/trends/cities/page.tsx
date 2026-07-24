@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Chip, TertiaryLink } from "@/components/ui";
 import { api } from "@/lib/api";
 import { flagEmoji, formatKmTotal } from "@/lib/format";
 import type { CitiesResponse, CityStats } from "@/lib/types";
@@ -52,9 +53,13 @@ export default function CitiesPage() {
   return (
     <div className="space-y-3">
       {/* Header — the screen's single gradient surface */}
-      <div className="hero-gradient rounded-3xl px-5 pt-4 pb-4">
+      <div className="gradient-drilldown rounded-3xl px-5 pt-4 pb-4">
         <div className="flex items-center justify-between">
-          <Link href="/trends" aria-label="Back to trends" className="text-clay-hero">
+          <Link
+            href="/trends"
+            aria-label="Back to trends"
+            className="tap-target text-clay-hero"
+          >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <p className="text-[13px] font-medium text-ink">Cities</p>
@@ -69,7 +74,7 @@ export default function CitiesPage() {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`text-[11.5px] px-4 py-1 rounded-full capitalize ${
+              className={`tap-target text-[11.5px] px-4 py-1 rounded-full capitalize ${
                 view === v ? "bg-white text-leaf-deep font-medium" : "text-clay-hero"
               }`}
             >
@@ -90,22 +95,15 @@ export default function CitiesPage() {
                 <p className="text-[15px] font-medium text-ink">
                   {flagEmoji(city.country_code)} {city.name}
                 </p>
-                {city.has_race && (
-                  <span className="text-[10.5px] font-medium text-ember">
-                    race
-                  </span>
-                )}
+                {city.has_race && <Chip tone="accent">Race</Chip>}
               </div>
               <p className="mt-0.5 text-[13px] text-clay">
                 {city.run_count} run{city.run_count === 1 ? "" : "s"} ·{" "}
                 {formatKmTotal(city.total_km)}
               </p>
-              <Link
-                href={viewRunsHref(city)}
-                className="inline-block mt-1 text-[11px] font-medium text-leaf hover:underline"
-              >
-                View runs →
-              </Link>
+              <TertiaryLink href={viewRunsHref(city)} className="mt-1">
+                View runs
+              </TertiaryLink>
             </div>
           ))}
           {data.unlocated_count > 0 && (

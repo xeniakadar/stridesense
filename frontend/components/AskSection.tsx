@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
+import { TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, RUN_TYPE_LABELS } from "@/lib/format";
 import type { AskAnswer } from "@/lib/types";
@@ -83,7 +84,7 @@ export function AskSection() {
         <button
           type="submit"
           disabled={loading || demoMode || !question.trim()}
-          className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:opacity-40"
+          className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:bg-leaf-soft disabled:text-leaf-deep/70"
         >
           {loading ? "Thinking…" : "Ask"}
         </button>
@@ -100,7 +101,7 @@ export function AskSection() {
                 setQuestion(q);
                 submit(q);
               }}
-              className="shrink-0 whitespace-nowrap text-[13px] px-3.5 py-1.5 rounded-[99px] bg-white border border-[#F0E8DD] text-[#0A6B59] hover:bg-white/80 disabled:opacity-50"
+              className="tap-target shrink-0 whitespace-nowrap text-[13px] px-3.5 py-1.5 rounded-[99px] bg-white border border-[#F0E8DD] text-[#0A6B59] hover:bg-white/80 disabled:opacity-50"
             >
               {q}
             </button>
@@ -131,16 +132,14 @@ export function AskSection() {
               </ul>
             </div>
           )}
-          <button
-            type="button"
+          <TertiaryLink
             onClick={() => {
               setResult(null);
               setQuestion("");
             }}
-            className="text-[13px] text-leaf-deep underline underline-offset-2"
           >
             Ask another question
-          </button>
+          </TertiaryLink>
         </div>
       )}
     </div>

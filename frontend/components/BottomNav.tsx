@@ -30,7 +30,7 @@ export function BottomNav() {
             key={href}
             href={href}
             aria-label={label}
-            className={`flex flex-col items-center gap-0.5 ${
+            className={`tap-target flex flex-col items-center gap-0.5 ${
               isActive(href) ? "text-leaf" : "text-nav-idle"
             }`}
           >

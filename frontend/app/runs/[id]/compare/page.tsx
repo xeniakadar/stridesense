@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartLegend } from "@/components/charts/ChartLegend";
 import { api, ApiError } from "@/lib/api";
 import {
   AXIS,
@@ -22,7 +23,6 @@ import {
   LEAF_MID,
   LEAF_SOFT,
   LINE,
-  SAND,
   TOOLTIP_STYLE,
 } from "@/lib/colors";
 import {
@@ -63,12 +63,12 @@ export default function CompareRunPage() {
   return (
     <div className="space-y-3">
       {/* Small gradient header — the screen's single gradient surface */}
-      <div className="hero-gradient rounded-3xl px-5 pt-4 pb-4">
+      <div className="gradient-drilldown rounded-3xl px-5 pt-4 pb-4">
         <div className="flex items-center justify-between">
           <Link
             href={`/runs/${run.id}`}
             aria-label="Back to run"
-            className="text-clay-hero"
+            className="tap-target text-clay-hero"
           >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
@@ -130,7 +130,7 @@ export default function CompareRunPage() {
                       ? ` · ${Math.round(s.weather_temp_start_c)}°C`
                       : ""}
                   </span>
-                  <span className="text-[11px] font-medium text-leaf">
+                  <span className="text-[11px] font-medium text-leaf-deep">
                     {s.score.toFixed(2)}
                   </span>
                 </Link>
@@ -159,7 +159,7 @@ function DeltaCards({ comparison }: { comparison: Comparison }) {
     const s = Math.round(Math.abs(pace));
     cards.push({
       key: "pace",
-      label: "pace",
+      label: "Pace",
       value: pace <= 0 ? `−${s}s` : `+${s}s`,
       sub: pace <= 0 ? "faster /km" : "slower /km",
       positive: pace < 0,
@@ -170,7 +170,7 @@ function DeltaCards({ comparison }: { comparison: Comparison }) {
     const b = Math.round(Math.abs(hr));
     cards.push({
       key: "hr",
-      label: "avg hr",
+      label: "Avg HR",
       value: hr <= 0 ? `−${b}` : `+${b}`,
       sub: hr <= 0 ? "lower bpm" : "higher bpm",
       positive: hr < 0,
@@ -181,7 +181,7 @@ function DeltaCards({ comparison }: { comparison: Comparison }) {
     const t = Math.round(Math.abs(temp));
     cards.push({
       key: "temp",
-      label: "temp",
+      label: "Temp",
       value: temp >= 0 ? `+${t}°C` : `−${t}°C`,
       sub: temp >= 0 ? "warmer" : "cooler",
       positive: false,
@@ -192,7 +192,7 @@ function DeltaCards({ comparison }: { comparison: Comparison }) {
     const g = Math.round(Math.abs(glucose));
     cards.push({
       key: "glucose",
-      label: "glucose",
+      label: "Glucose",
       value: glucose >= 0 ? `+${g}` : `−${g}`,
       sub: glucose >= 0 ? "higher mg/dL" : "lower mg/dL",
       positive: false,
@@ -314,6 +314,7 @@ function PaceLineChart({
   }
 
   return (
+    <>
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={data} margin={{ top: 18, right: 14, bottom: 4, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
@@ -374,5 +375,13 @@ function PaceLineChart({
         )}
       </LineChart>
     </ResponsiveContainer>
+    <ChartLegend
+      items={[
+        { label: "This run", color: LEAF_BRIGHT, shape: "dot" },
+        { label: "Comparable runs", color: LEAF_MID, shape: "dot" },
+        { label: "Trend", color: LEAF_SOFT, dashed: true },
+      ]}
+    />
+    </>
   );
 }

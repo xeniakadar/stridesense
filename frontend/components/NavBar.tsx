@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useDemoMode } from "@/components/DemoProvider";
+import { Chip } from "@/components/ui";
 
 export function NavBar() {
   const demoMode = useDemoMode();
@@ -26,23 +27,26 @@ export function NavBar() {
           StrideSense
         </Link>
         {demoMode && (
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+          <Chip
+            tone="custom"
+            className="bg-amber-50 text-amber-800 border border-amber-200"
+          >
             Demo
-          </span>
+          </Chip>
         )}
         {!demoMode && (
           <nav className="flex items-center gap-1.5">
             <Link
               href="/settings"
               aria-label="Settings"
-              className="p-2 rounded-full text-clay hover:bg-line/60"
+              className="tap-target p-2 rounded-full text-clay hover:bg-line/60"
             >
               <Settings size={17} strokeWidth={1.75} />
             </Link>
             <Link
               href="/runs/new"
               aria-label="Add run"
-              className="p-2 rounded-full bg-ink text-cream hover:bg-clay"
+              className="tap-target p-2 rounded-full bg-leaf-deep text-white hover:bg-leaf"
             >
               <Plus size={16} strokeWidth={2} />
             </Link>

@@ -95,7 +95,7 @@ function BarChrome({
         <GripVertical
           size={15}
           strokeWidth={1.75}
-          className={lifted ? "text-leaf" : "text-[#B0866A]"}
+          className={lifted ? "text-leaf" : "text-sand"}
         />
       )}
       <span className="flex-1 text-[13px] text-ink">{title}</span>
@@ -148,7 +148,7 @@ function SortableBar({
             {...attributes}
             {...listeners}
             aria-label={`Reorder ${title}`}
-            className="p-1 -m-1 touch-none cursor-grab active:cursor-grabbing text-[#B0866A] hover:text-clay"
+            className="tap-target p-1 -m-1 touch-none cursor-grab active:cursor-grabbing text-sand hover:text-clay"
           >
             <GripVertical size={15} strokeWidth={1.75} />
           </button>
@@ -158,7 +158,7 @@ function SortableBar({
           <button
             onClick={onHide}
             aria-label={`Hide ${title}`}
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-leaf hover:bg-line/50"
+            className="tap-target flex items-center gap-1 px-2 py-1 rounded-full text-leaf-deep hover:bg-line/50"
           >
             <Eye size={15} strokeWidth={1.75} />
             <span className="text-[11px] font-medium">Visible</span>
@@ -267,10 +267,10 @@ export default function TrendsPage() {
           <h1 className="text-[32px] font-medium text-ink leading-tight">Trends</h1>
           <button
             onClick={() => setEditing((e) => !e)}
-            className={`text-[12px] font-medium px-3 py-1 rounded-full ${
+            className={`tap-target text-[12px] font-medium px-3 py-1 rounded-full ${
               editing
-                ? "bg-leaf text-white"
-                : "text-leaf border-[0.5px] border-line hover:bg-line/40"
+                ? "bg-leaf-deep text-white"
+                : "text-leaf-deep border-[0.5px] border-line hover:bg-line/40"
             }`}
           >
             {editing ? "Done" : "Customize"}
@@ -338,7 +338,7 @@ export default function TrendsPage() {
                     <button
                       onClick={() => show(id)}
                       aria-label={`Add ${blockById.get(id)?.title}`}
-                      className="p-1.5 rounded-full bg-leaf-pale text-leaf-deep hover:bg-leaf-soft"
+                      className="tap-target p-1.5 rounded-full bg-leaf-deep text-white hover:bg-leaf"
                     >
                       <Plus size={15} strokeWidth={2} />
                     </button>
