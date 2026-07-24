@@ -25,7 +25,7 @@ import {
   TOOLTIP_STYLE,
 } from "@/lib/colors";
 import {
-  cityFromLat,
+  cityFromCoords,
   formatDate,
   formatDistance,
   formatMonthYear,
@@ -55,7 +55,7 @@ export default function CompareRunPage() {
   if (error) return <p className="text-sm text-red-700">{error}</p>;
   if (!run || !similar) return <p className="text-sm text-sand">Loading…</p>;
 
-  const city = cityFromLat(run.start_lat);
+  const city = cityFromCoords(run.start_lat, run.start_lng);
   const n = similar.runs.length;
   const comparison = similar.comparison;
 

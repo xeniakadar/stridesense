@@ -124,6 +124,9 @@ class CitedRunRead(BaseModel):
     run_type: RunType
     distance_km: float
     score: float
+    # None when the run has no coordinates or no known city resolves;
+    # defaulted so demo answers pre-generated before this field parse fine
+    city: str | None = None
 
 
 class AskAnswerRead(BaseModel):

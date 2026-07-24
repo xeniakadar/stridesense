@@ -76,13 +76,29 @@ export function flagEmoji(countryCode: string | null): string {
   );
 }
 
-// Same latitude buckets the backend uses in run_to_text (app/services/ask.py)
-export function cityFromLat(lat: number | null | undefined): string | null {
-  if (lat == null) return null;
-  if (lat >= 47 && lat < 48) return "Budapest";
-  if (lat >= 40 && lat < 41) return "NYC";
-  if (lat >= 38 && lat < 39) return "Lisbon";
-  if (lat >= 41 && lat < 42) return "Chicago";
+// Mirrors KNOWN_CITIES + CLUSTER_RADIUS_DEG in the backend
+// (app/services/cities.py) — keep the two lists in sync
+const KNOWN_CITIES: [string, number, number][] = [
+  ["Phuket", 7.89, 98.4],
+  ["Hanoi", 21.03, 105.85],
+  ["Budapest", 47.51, 19.05],
+  ["Lisbon", 38.72, -9.14],
+  ["New York", 40.78, -73.97],
+  ["Chicago", 41.88, -87.62],
+  ["San Francisco", 37.77, -122.42],
+];
+const CITY_RADIUS_DEG = 0.15;
+
+export function cityFromCoords(
+  lat: number | null | undefined,
+  lng: number | null | undefined
+): string | null {
+  if (lat == null || lng == null) return null;
+  for (const [name, cityLat, cityLng] of KNOWN_CITIES) {
+    if (Math.hypot(lat - cityLat, lng - cityLng) <= CITY_RADIUS_DEG) {
+      return name;
+    }
+  }
   return null;
 }
 

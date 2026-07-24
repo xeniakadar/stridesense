@@ -12,7 +12,7 @@ import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
 import { Chip, TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import {
-  cityFromLat,
+  cityFromCoords,
   formatDate,
   formatDistance,
   formatDuration,
@@ -61,7 +61,7 @@ export default function RunDetailPage() {
 
   const hasWeather = run.weather_temp_start_c !== null;
   const hasGlucose = run.glucose_at_start_mg_dl !== null;
-  const city = cityFromLat(run.start_lat);
+  const city = cityFromCoords(run.start_lat, run.start_lng);
 
   return (
     <div className="space-y-3">

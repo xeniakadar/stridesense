@@ -233,6 +233,8 @@ export interface CitedRun {
   run_type: RunType;
   distance_km: number;
   score: number;
+  // Absent on demo answers pre-generated before the field existed
+  city?: string | null;
 }
 
 export interface AskAnswer {

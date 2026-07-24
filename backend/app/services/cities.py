@@ -60,6 +60,17 @@ def _resolve(lat: float, lng: float) -> tuple[str, str | None, float, float]:
     return "Unknown", None, round(lat, 2), round(lng, 2)
 
 
+def city_for_run(lat: float | None, lng: float | None) -> str | None:
+    """Known-city name for a single run's start point, else None.
+
+    The per-run counterpart of cluster resolution — used wherever one run
+    needs a location label (ask context, cited runs)."""
+    if lat is None or lng is None:
+        return None
+    name, _, _, _ = _resolve(lat, lng)
+    return None if name == "Unknown" else name
+
+
 def cluster_cities(runs: list[Run]) -> tuple[list[CityStats], int]:
     """(per-city stats sorted by run count, count of runs without coords)."""
     located = [r for r in runs if r.start_lat is not None and r.start_lng is not None]

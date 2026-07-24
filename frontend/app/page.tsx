@@ -9,7 +9,7 @@ import { Chip } from "@/components/ui";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
 import {
-  cityFromLat,
+  cityFromCoords,
   formatDate,
   formatDistance,
   formatKmTotal,
@@ -106,8 +106,8 @@ export default function DashboardPage() {
                   </span>
                   <span className="block text-[13px] text-sand mt-0.5">
                     {RUN_TYPE_LABELS[run.run_type]}
-                    {cityFromLat(run.start_lat)
-                      ? ` · ${cityFromLat(run.start_lat)}`
+                    {cityFromCoords(run.start_lat, run.start_lng)
+                      ? ` · ${cityFromCoords(run.start_lat, run.start_lng)}`
                       : ""}
                   </span>
                 </span>

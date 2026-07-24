@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.models import AskDemoAnswer
 from app.schemas.analytics import AskAnswerRead, AskRequest, CitedRunRead
 from app.services.ask import ASK_MODEL, generate_answer, retrieve
+from app.services.cities import city_for_run
 from app.services.insights import InsightUnavailableError
 
 router = APIRouter(prefix="/ask", tags=["ask"])
@@ -86,6 +87,7 @@ async def ask_endpoint(
                 run_type=run.run_type,
                 distance_km=run.distance_km,
                 score=round(score, 3),
+                city=city_for_run(run.start_lat, run.start_lng),
             )
             for run, score in retrieved
         ],
