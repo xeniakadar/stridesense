@@ -25,8 +25,10 @@
   /* Cards */
   --color-line: #f2e7da;
 
-  /* Bottom-nav inactive icons */
-  --color-nav-idle: #d6c3af;
+  /* Bottom-nav inactive icons + labels. Deliberately aligned with the
+     caption tier (SS-04): the old #d6c3af read ~1.5:1 on the white bar,
+     far under AA for the 10px labels. */
+  --color-nav-idle: #96633f;
 
   /* Warm accent for race markers/chips (mesh rose, deepened for text) */
   --color-ember: #e8506e;
