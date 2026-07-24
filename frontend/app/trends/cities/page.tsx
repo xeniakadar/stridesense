@@ -54,7 +54,7 @@ export default function CitiesPage() {
       {/* Header — the screen's single gradient surface */}
       <div className="hero-gradient rounded-3xl px-5 pt-4 pb-4">
         <div className="flex items-center justify-between">
-          <Link href="/trends" aria-label="Back to trends" className="text-clay">
+          <Link href="/trends" aria-label="Back to trends" className="text-clay-hero">
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <p className="text-[13px] font-medium text-ink">Cities</p>
@@ -70,7 +70,7 @@ export default function CitiesPage() {
               key={v}
               onClick={() => setView(v)}
               className={`text-[11.5px] px-4 py-1 rounded-full capitalize ${
-                view === v ? "bg-white text-leaf-deep font-medium" : "text-clay"
+                view === v ? "bg-white text-leaf-deep font-medium" : "text-clay-hero"
               }`}
             >
               {v}

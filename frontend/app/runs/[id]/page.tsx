@@ -62,13 +62,13 @@ export default function RunDetailPage() {
   return (
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
-      <div className="hero-gradient rounded-3xl px-5 pt-5 pb-5">
+      <div className="hero-gradient-detail rounded-3xl px-5 pt-5 pb-5">
         <div className="flex justify-between items-center">
-          <Link href="/runs" aria-label="Back to runs" className="text-clay">
+          <Link href="/runs" aria-label="Back to runs" className="text-clay-hero">
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] bg-white/55 text-clay px-2.5 py-0.5 rounded-full capitalize">
+            <span className="text-[11px] bg-white/55 text-clay-hero px-2.5 py-0.5 rounded-full capitalize">
               {run.run_type}
             </span>
             {!demoMode && (
@@ -76,7 +76,7 @@ export default function RunDetailPage() {
                 <Link
                   href={`/runs/${run.id}/edit`}
                   aria-label="Edit run"
-                  className="p-1.5 rounded-full bg-white/55 text-clay hover:bg-white/80"
+                  className="p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
                 >
                   <Pencil size={13} strokeWidth={1.75} />
                 </Link>
@@ -96,7 +96,7 @@ export default function RunDetailPage() {
         <p className="mt-3 text-4xl font-medium text-ink leading-none">
           {formatDistance(run.distance_km)}
         </p>
-        <p className="mt-1.5 text-xs text-clay">
+        <p className="mt-1.5 text-xs text-clay-hero">
           {formatDate(run.date)}
           {city ? ` · ${city}` : ""}
         </p>
@@ -252,7 +252,7 @@ function HeroStat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <p className="text-[15px] font-medium text-ink">{value}</p>
-      <p className="text-[10.5px] text-clay">{label}</p>
+      <p className="text-[10.5px] text-clay-hero">{label}</p>
     </div>
   );
 }
