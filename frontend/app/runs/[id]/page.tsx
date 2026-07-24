@@ -16,6 +16,7 @@ import {
   formatGlucose,
   formatPace,
   formatTimeInRange,
+  RUN_TYPE_LABELS,
 } from "@/lib/format";
 import type { Run, SimilarRun } from "@/lib/types";
 
@@ -93,7 +94,7 @@ export default function RunDetailPage() {
           </div>
         </div>
 
-        <p className="mt-3 text-4xl font-medium text-ink leading-none">
+        <p className="mt-3 text-5xl font-medium text-ink leading-none">
           {formatDistance(run.distance_km)}
         </p>
         <p className="mt-1.5 text-xs text-clay-hero">
@@ -172,7 +173,7 @@ export default function RunDetailPage() {
 
       {hasWeather && (
         <Card>
-          <p className="text-[13px] font-medium text-ink mb-2.5">Weather</p>
+          <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">Weather</p>
           <StatGrid>
             <Stat
               label="Temp at start"
@@ -227,7 +228,7 @@ export default function RunDetailPage() {
       )}
 
       <Card>
-        <p className="text-[13px] font-medium text-ink mb-2.5">Details</p>
+        <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">Details</p>
         <StatGrid>
           <Stat
             label="RPE"
@@ -318,7 +319,7 @@ function InsightSection({ runId }: { runId: string }) {
   return (
     <section className="glass-ai rounded-2xl p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-medium text-leaf-deep">Insight</h2>
+        <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Insight</h2>
         {!loading && !demoMode && (
           <button
             onClick={handleRegenerate}
@@ -372,8 +373,8 @@ function SimilarRunsSection({ runId }: { runId: string }) {
             href={`/runs/${r.run_id}`}
             className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
           >
-            <span className="text-xs text-ink capitalize">
-              {formatDate(r.date)} · {r.run_type} ·{" "}
+            <span className="text-[15px] text-ink">
+              {formatDate(r.date)} · {RUN_TYPE_LABELS[r.run_type]} ·{" "}
               {formatDistance(r.distance_km)}
             </span>
             <span className="text-[11px] font-medium text-leaf">

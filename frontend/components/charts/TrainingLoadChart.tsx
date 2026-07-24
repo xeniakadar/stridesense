@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { LEAF, LINE, SAND, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { LoadPoint } from "@/lib/types";
 
@@ -36,12 +36,13 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
         <XAxis
           dataKey="date"
           tickFormatter={formatDateShort}
-          tick={{ fontSize: 11, fill: SAND }}
+          minTickGap={28}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: SAND }}
+          tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
           width={34}

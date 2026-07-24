@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-medium text-ink mb-5">Settings</h1>
+      <h1 className="text-[32px] font-medium text-ink leading-tight mb-5">Settings</h1>
 
       {notice && (
         <div className="p-4 mb-4 bg-leaf-pale border-[0.5px] border-leaf-soft rounded-2xl text-sm text-leaf-deep">

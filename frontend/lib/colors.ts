@@ -9,6 +9,8 @@ export const LEAF_MID = "#5FD4BE";
 export const LEAF_SOFT = "#A5E7D8";
 export const LEAF_PALE = "#DDF5EE";
 export const SAND = "#BB8A66";
+// Axis tick ink — SAND was too low-contrast for chart labels
+export const AXIS = "#7A3A22";
 export const LINE = "#F2E7DA";
 export const INK = "#4A2410";
 

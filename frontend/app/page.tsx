@@ -4,12 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { DailyOverview } from "@/components/DailyOverview";
+import { useDemoMode } from "@/components/DemoProvider";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
-import { cityFromLat, formatDate, RUN_TYPE_LABELS } from "@/lib/format";
+import {
+  cityFromLat,
+  formatDate,
+  formatDistance,
+  formatKmTotal,
+  RUN_TYPE_LABELS,
+} from "@/lib/format";
 import type { LoadPoint, Run, WeeklyMileagePoint } from "@/lib/types";
 
 export default function DashboardPage() {
+  const demoMode = useDemoMode();
   const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [load, setLoad] = useState<LoadPoint | null>(null);
@@ -44,8 +52,8 @@ export default function DashboardPage() {
           transparent top bar. */}
       <div className="hero-gradient -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
         <p className="text-[13px] text-clay-hero">Hi Xenia</p>
-        <p className="mt-2 text-4xl font-medium text-ink leading-tight">
-          {thisWeek ? `${thisWeek.distance_km.toFixed(1)} km` : "— km"}
+        <p className="mt-2 text-5xl font-medium text-ink leading-tight">
+          {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}
         </p>
         <p className="mt-0.5 mb-3 text-xs text-clay-hero">
           this week
@@ -65,8 +73,8 @@ export default function DashboardPage() {
 
       <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
         <div className="mb-3 flex justify-between items-baseline">
-          <h2 className="text-[13px] font-medium text-ink">Weekly distance</h2>
-          <p className="text-[11px] text-sand">last 12 weeks</p>
+          <h2 className="text-[20px] font-medium text-ink leading-snug">Weekly distance</h2>
+          <p className="text-[13px] text-sand">last 12 weeks</p>
         </div>
         {mileage ? (
           <WeeklyMileageChart data={mileage} />
@@ -92,19 +100,21 @@ export default function DashboardPage() {
                 className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
               >
                 <span>
-                  <span className="block text-[13px] text-ink">
-                    {formatDate(run.date)} · {run.distance_km} km
+                  <span className="block text-[15px] text-ink">
+                    {formatDate(run.date)} · {formatDistance(run.distance_km)}
                   </span>
-                  <span className="block text-[11px] text-sand mt-0.5">
+                  <span className="block text-[13px] text-sand mt-0.5">
                     {RUN_TYPE_LABELS[run.run_type]}
                     {cityFromLat(run.start_lat)
                       ? ` · ${cityFromLat(run.start_lat)}`
                       : ""}
                   </span>
                 </span>
-                <span className="text-[10.5px] bg-leaf-pale text-leaf-deep px-2 py-0.5 rounded-full">
-                  {run.source}
-                </span>
+                {!demoMode && (
+                  <span className="text-[10.5px] bg-leaf-pale text-leaf-deep px-2 py-0.5 rounded-full">
+                    {run.source}
+                  </span>
+                )}
               </Link>
             ))}
           </div>

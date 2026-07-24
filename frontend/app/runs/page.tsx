@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { api, ApiError } from "@/lib/api";
 import {
   formatDate,
@@ -48,6 +49,7 @@ export default function RunsPage() {
 const CITY_FILTER_RADIUS_DEG = 0.15;
 
 function RunsPageInner() {
+  const demoMode = useDemoMode();
   const [allRuns, setAllRuns] = useState<Run[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const params = useSearchParams();
@@ -122,7 +124,7 @@ function RunsPageInner() {
     <div>
       <div className="flex items-baseline justify-between mb-3 px-1">
         <span className="flex items-center gap-2">
-          <h1 className="text-xl font-medium text-ink">Runs</h1>
+          <h1 className="text-[32px] font-medium text-ink leading-tight">Runs</h1>
           {cityFilterActive && (
             <Link
               href="/runs"
@@ -146,22 +148,25 @@ function RunsPageInner() {
             className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
           >
             <span>
-              <span className="block text-[13px] text-ink">
+              <span className="block text-[15px] text-ink">
                 {formatDate(run.date)} · {formatDistance(run.distance_km)}
               </span>
-              <span className="block text-[11px] text-sand mt-0.5">
+              <span className="block text-[13px] text-sand mt-0.5">
                 {RUN_TYPE_LABELS[run.run_type]} ·{" "}
                 {formatPace(run.avg_pace_seconds_per_km)} ·{" "}
                 {formatDuration(run.duration_seconds)}
                 {run.avg_hr ? ` · ${run.avg_hr} bpm` : ""}
               </span>
             </span>
-            <span className="flex items-center gap-1.5 shrink-0 ml-3">
-              {run.glucose_at_start_mg_dl !== null && (
-                <span title="Glucose data attached">🩸</span>
-              )}
-              <SourceBadge source={run.source} />
-            </span>
+            {!demoMode && (
+              // In demo every row is manual + simulated glucose — pure noise
+              <span className="flex items-center gap-1.5 shrink-0 ml-3">
+                {run.glucose_at_start_mg_dl !== null && (
+                  <span title="Glucose data attached">🩸</span>
+                )}
+                <SourceBadge source={run.source} />
+              </span>
+            )}
           </Link>
         ))}
       </div>

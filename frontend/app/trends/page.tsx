@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { EyeOff, GripVertical, Plus } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useDemoMode } from "@/components/DemoProvider";
@@ -95,7 +95,7 @@ function BarChrome({
         <GripVertical
           size={15}
           strokeWidth={1.75}
-          className={lifted ? "text-leaf" : "text-nav-idle"}
+          className={lifted ? "text-leaf" : "text-[#B0866A]"}
         />
       )}
       <span className="flex-1 text-[13px] text-ink">{title}</span>
@@ -148,18 +148,20 @@ function SortableBar({
             {...attributes}
             {...listeners}
             aria-label={`Reorder ${title}`}
-            className="p-1 -m-1 touch-none cursor-grab active:cursor-grabbing text-nav-idle hover:text-clay"
+            className="p-1 -m-1 touch-none cursor-grab active:cursor-grabbing text-[#B0866A] hover:text-clay"
           >
             <GripVertical size={15} strokeWidth={1.75} />
           </button>
         }
         trailing={
+          // Open eye = visible; tapping hides it
           <button
             onClick={onHide}
             aria-label={`Hide ${title}`}
-            className="p-1.5 rounded-full text-clay hover:bg-line/50"
+            className="flex items-center gap-1 px-2 py-1 rounded-full text-leaf hover:bg-line/50"
           >
-            <EyeOff size={15} strokeWidth={1.75} />
+            <Eye size={15} strokeWidth={1.75} />
+            <span className="text-[11px] font-medium">Visible</span>
           </button>
         }
       />
@@ -262,7 +264,7 @@ export default function TrendsPage() {
     <div className="space-y-3">
       <div className="px-1">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-medium text-ink">Trends</h1>
+          <h1 className="text-[32px] font-medium text-ink leading-tight">Trends</h1>
           <button
             onClick={() => setEditing((e) => !e)}
             className={`text-[12px] font-medium px-3 py-1 rounded-full ${
@@ -326,8 +328,12 @@ export default function TrendsPage() {
                     key={id}
                     className="flex items-center justify-between bg-white/60 border-[0.5px] border-dashed border-line rounded-2xl px-3.5 py-2.5"
                   >
-                    <span className="text-[13px] text-clay">
+                    <span className="flex items-center gap-2 text-[13px] text-clay">
                       {blockById.get(id)?.title ?? id}
+                      <span className="flex items-center gap-1 text-[11px] text-sand">
+                        <EyeOff size={13} strokeWidth={1.75} />
+                        Hidden
+                      </span>
                     </span>
                     <button
                       onClick={() => show(id)}
