@@ -11,7 +11,7 @@ import {
 } from "recharts";
 
 import { ChartLegend } from "@/components/charts/ChartLegend";
-import { AXIS, LEAF, LEAF_SOFT, LINE, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LEAF_DARK, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { GlucoseTrendPoint } from "@/lib/types";
 
@@ -57,10 +57,12 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
             name === "rolling_avg" ? "7-day avg" : "Daily",
           ]}
         />
+        {/* Daily stays subordinate by weight (hairline vs 2.5), but its
+            stroke must clear 3:1 on white — LEAF_SOFT sat at 1.4:1 */}
         <Line
           type="monotone"
           dataKey="time_in_range_pct"
-          stroke={LEAF_SOFT}
+          stroke={LEAF_DARK}
           strokeWidth={1}
           dot={false}
         />
@@ -68,7 +70,7 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
           type="monotone"
           dataKey="rolling_avg"
           stroke={LEAF}
-          strokeWidth={2}
+          strokeWidth={2.5}
           dot={false}
         />
       </LineChart>
@@ -76,7 +78,7 @@ export function GlucoseTirChart({ data }: { data: GlucoseTrendPoint[] }) {
     <ChartLegend
       items={[
         { label: "7-day avg", color: LEAF },
-        { label: "Daily", color: LEAF_SOFT },
+        { label: "Daily", color: LEAF_DARK, thin: true },
       ]}
     />
     </>

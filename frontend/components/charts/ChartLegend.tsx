@@ -8,6 +8,8 @@ export interface LegendItem {
    * "square" a solid block for bar series. */
   shape?: "line" | "dot" | "band" | "square";
   dashed?: boolean;
+  /** Hairline swatch for series distinguished by stroke weight */
+  thin?: boolean;
 }
 
 /** Compact legend row for any multi-series or banded chart — those must
@@ -35,7 +37,7 @@ export function ChartLegend({ items }: { items: LegendItem[] }) {
             />
           ) : (
             <span
-              className="w-[14px] border-t-2"
+              className={`w-[14px] ${item.thin ? "border-t" : "border-t-2"}`}
               style={{
                 borderColor: item.color,
                 borderTopStyle: item.dashed ? "dashed" : "solid",

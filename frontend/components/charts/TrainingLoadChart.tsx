@@ -12,13 +12,13 @@ import {
 } from "recharts";
 
 import { ChartLegend } from "@/components/charts/ChartLegend";
+import {
+  ACWR_OPTIMAL_HIGH as OPTIMAL_HIGH,
+  ACWR_OPTIMAL_LOW as OPTIMAL_LOW,
+} from "@/lib/acwr";
 import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { LoadPoint } from "@/lib/types";
-
-// ACWR sweet spot per sports-science convention (matches the backend)
-const OPTIMAL_LOW = 0.8;
-const OPTIMAL_HIGH = 1.3;
 
 export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
   const points = data.filter((p) => p.acwr !== null);
@@ -28,6 +28,14 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
         Not enough history for a load ratio yet.
       </div>
     );
+  }
+
+  // Half-unit ticks (0.5 / 1.0 / 1.5 …) instead of recharts' arbitrary
+  // auto-ticks like 1.77
+  const maxAcwr = Math.max(...points.map((p) => p.acwr as number));
+  const ticks: number[] = [];
+  for (let t = 0.5; t <= maxAcwr + 0.3; t += 0.5) {
+    ticks.push(Number(t.toFixed(1)));
   }
 
   return (
@@ -44,6 +52,7 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
           tickLine={false}
         />
         <YAxis
+          ticks={ticks}
           tickFormatter={(v: number) => Number(v).toFixed(1)}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
@@ -58,7 +67,7 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
           fillOpacity={0.1}
           strokeOpacity={0}
           label={{
-            value: "optimal 0.8–1.3",
+            value: `optimal zone ${OPTIMAL_LOW}–${OPTIMAL_HIGH}`,
             position: "insideTopRight",
             fontSize: 10,
             fill: AXIS,
@@ -81,7 +90,11 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
     <ChartLegend
       items={[
         { label: "ACWR", color: LEAF },
-        { label: "Optimal range (0.8–1.3)", color: LEAF, shape: "band" },
+        {
+          label: `Optimal zone (${OPTIMAL_LOW}–${OPTIMAL_HIGH})`,
+          color: LEAF,
+          shape: "band",
+        },
       ]}
     />
     </>

@@ -5,6 +5,9 @@ export const LEAF = "#1FA890";
 // Brighter accent of the data teal — reserved for singling one mark out
 // of a series
 export const LEAF_BRIGHT = "#25C9A5";
+// Slightly deepened LEAF for thin/subordinate strokes — 3.34:1 on white,
+// where LEAF (2.97:1) falls just short of the 3:1 non-text minimum
+export const LEAF_DARK = "#189E87";
 export const LEAF_MID = "#5FD4BE";
 export const LEAF_SOFT = "#A5E7D8";
 export const LEAF_PALE = "#DDF5EE";
