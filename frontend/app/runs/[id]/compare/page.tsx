@@ -66,18 +66,18 @@ export default function CompareRunPage() {
           <Link
             href={`/runs/${run.id}`}
             aria-label="Back to run"
-            className="text-clay"
+            className="text-clay-hero"
           >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <p className="text-[13px] font-medium text-ink">vs similar runs</p>
           <span className="w-[18px]" />
         </div>
-        <p className="mt-2.5 text-xs text-clay">
+        <p className="mt-2.5 text-xs text-clay-hero">
           {formatDate(run.date)} · {run.run_type} · {run.distance_km} km
           {city ? ` · ${city}` : ""}
         </p>
-        <p className="mt-0.5 text-[11.5px] text-clay">
+        <p className="mt-0.5 text-[11.5px] text-clay-hero">
           compared with your {n} closest{" "}
           {similar.type_fallback ? "" : `${run.run_type} `}runs
           {similar.type_fallback

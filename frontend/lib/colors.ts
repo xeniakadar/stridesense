@@ -1,14 +1,16 @@
 // Design-token hex values for places Tailwind classes can't reach
-// (Recharts props). Keep in sync with @theme in app/globals.css.
-export const LEAF = "#3B9C7A";
-// Brighter accent of leaf — reserved for singling one mark out of a series
-export const LEAF_BRIGHT = "#2FC08D";
-export const LEAF_MID = "#8FD4B4";
-export const LEAF_SOFT = "#B7E3CF";
-export const LEAF_PALE = "#D7EFE3";
-export const SAND = "#B0866A";
-export const LINE = "#EFE9E0";
-export const INK = "#4A2E1C";
+// (Recharts props, leaflet markers). Keep in sync with @theme in
+// app/globals.css. Palette v2: data encoding is the teal family.
+export const LEAF = "#1FA890";
+// Brighter accent of the data teal — reserved for singling one mark out
+// of a series
+export const LEAF_BRIGHT = "#25C9A5";
+export const LEAF_MID = "#5FD4BE";
+export const LEAF_SOFT = "#A5E7D8";
+export const LEAF_PALE = "#DDF5EE";
+export const SAND = "#BB8A66";
+export const LINE = "#F2E7DA";
+export const INK = "#4A2410";
 
 // Shared Recharts tooltip styling
 export const TOOLTIP_STYLE = {

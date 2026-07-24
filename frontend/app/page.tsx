@@ -41,11 +41,11 @@ export default function DashboardPage() {
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
       <div className="hero-gradient rounded-3xl px-5 pt-6 pb-5">
-        <p className="text-[13px] text-clay">Hi Xenia</p>
+        <p className="text-[13px] text-clay-hero">Hi Xenia</p>
         <p className="mt-2 text-4xl font-medium text-ink leading-tight">
           {thisWeek ? `${thisWeek.distance_km.toFixed(1)} km` : "— km"}
         </p>
-        <p className="mt-0.5 mb-3 text-xs text-clay">
+        <p className="mt-0.5 mb-3 text-xs text-clay-hero">
           this week
           {runsThisWeek !== null
             ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
