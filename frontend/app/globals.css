@@ -41,7 +41,12 @@ body {
 /* Material 1 — gradient surfaces. Exactly three, each with one assigned
    purpose; never invent a per-screen variant:
    .gradient-overview  — the Home hero only
-   .gradient-detail    — the Run-detail hero only
+   .gradient-detail    — the Run-detail hero only. One geometry; the
+                         run-type modifier classes (.run-easy, .run-long,
+                         .run-interval, .run-tempo, .run-recovery,
+                         .run-race) only re-tint its hue variables —
+                         green for easy, orange for interval, red for
+                         tempo, and so on. No modifier = neutral warm.
    .gradient-drilldown — compact headers on drill-down screens
                          (Cities, Compare)
    Max one gradient surface per screen. All are layered radial meshes of
@@ -70,29 +75,71 @@ body {
     #fff4ec;
 }
 
-/* Run detail's own mesh — warmer, with the rose and lavender hues */
+/* Run detail's own mesh. Default (no modifier) is the neutral warm
+   rose/lavender mix; run-type modifiers swap only the hue variables. */
 .gradient-detail {
+  --gd-1: rgba(255, 138, 107, 0.42); /* top-left */
+  --gd-2: rgba(255, 94, 126, 0.32); /* top-right */
+  --gd-3: rgba(255, 196, 107, 0.4); /* bottom-right */
+  --gd-4: rgba(183, 139, 232, 0.28); /* bottom-left */
+  --gd-base: #fff1e8;
   background: radial-gradient(
       120% 90% at 12% 12%,
-      rgba(255, 138, 107, 0.42),
+      var(--gd-1),
       transparent 60%
     ),
-    radial-gradient(
-      100% 80% at 90% 10%,
-      rgba(255, 94, 126, 0.32),
-      transparent 55%
-    ),
-    radial-gradient(
-      110% 90% at 85% 88%,
-      rgba(255, 196, 107, 0.4),
-      transparent 60%
-    ),
-    radial-gradient(
-      95% 85% at 15% 90%,
-      rgba(183, 139, 232, 0.28),
-      transparent 60%
-    ),
-    #fff1e8;
+    radial-gradient(100% 80% at 90% 10%, var(--gd-2), transparent 55%),
+    radial-gradient(110% 90% at 85% 88%, var(--gd-3), transparent 60%),
+    radial-gradient(95% 85% at 15% 90%, var(--gd-4), transparent 60%),
+    var(--gd-base);
+}
+/* Easy — predominantly green: teal + lime */
+.gradient-detail.run-easy {
+  --gd-1: rgba(95, 212, 190, 0.42);
+  --gd-2: rgba(200, 232, 122, 0.34);
+  --gd-3: rgba(165, 231, 216, 0.4);
+  --gd-4: rgba(200, 232, 122, 0.24);
+  --gd-base: #eefaf4;
+}
+/* Recovery — the easy palette, dialed down calmer */
+.gradient-detail.run-recovery {
+  --gd-1: rgba(95, 212, 190, 0.28);
+  --gd-2: rgba(183, 139, 232, 0.16);
+  --gd-3: rgba(165, 231, 216, 0.34);
+  --gd-4: rgba(200, 232, 122, 0.18);
+  --gd-base: #f1fbf6;
+}
+/* Long — endurance warmth: amber over teal */
+.gradient-detail.run-long {
+  --gd-1: rgba(255, 196, 107, 0.44);
+  --gd-2: rgba(255, 138, 107, 0.28);
+  --gd-3: rgba(95, 212, 190, 0.36);
+  --gd-4: rgba(255, 196, 107, 0.24);
+  --gd-base: #fff6e8;
+}
+/* Interval — orange: coral + amber */
+.gradient-detail.run-interval {
+  --gd-1: rgba(255, 138, 107, 0.46);
+  --gd-2: rgba(255, 196, 107, 0.4);
+  --gd-3: rgba(255, 94, 126, 0.26);
+  --gd-4: rgba(255, 138, 107, 0.22);
+  --gd-base: #fff3ea;
+}
+/* Tempo — red: rose-led */
+.gradient-detail.run-tempo {
+  --gd-1: rgba(255, 94, 126, 0.44);
+  --gd-2: rgba(255, 138, 107, 0.38);
+  --gd-3: rgba(255, 196, 107, 0.26);
+  --gd-4: rgba(255, 94, 126, 0.22);
+  --gd-base: #fff0ee;
+}
+/* Race — celebratory: rose + lavender */
+.gradient-detail.run-race {
+  --gd-1: rgba(255, 94, 126, 0.4);
+  --gd-2: rgba(183, 139, 232, 0.36);
+  --gd-3: rgba(255, 138, 107, 0.28);
+  --gd-4: rgba(255, 196, 107, 0.26);
+  --gd-base: #fff0f2;
 }
 
 /* Drill-down headers — the overview mesh, dialed down so compact headers
