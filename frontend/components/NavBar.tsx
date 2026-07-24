@@ -2,14 +2,25 @@
 
 import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useDemoMode } from "@/components/DemoProvider";
 
 export function NavBar() {
   const demoMode = useDemoMode();
+  // On the homepage the bar floats transparent over the full-bleed hero
+  // mesh and scrolls away with it; everywhere else it's the sticky
+  // near-white bar.
+  const onHome = usePathname() === "/";
 
   return (
-    <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur-sm">
+    <header
+      className={
+        onHome
+          ? "absolute top-0 inset-x-0 z-20"
+          : "sticky top-0 z-20 bg-cream/90 backdrop-blur-sm"
+      }
+    >
       <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Link href="/" className="text-base font-medium text-ink">
