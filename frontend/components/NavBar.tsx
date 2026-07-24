@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 
 import { useDemoMode } from "@/components/DemoProvider";
 import { Logo } from "@/components/Logo";
-import { Chip } from "@/components/ui";
 
 export function NavBar() {
   const demoMode = useDemoMode();
@@ -27,14 +26,7 @@ export function NavBar() {
         <Link href="/" className="tap-target">
           <Logo size={16} />
         </Link>
-        {demoMode && (
-          <Chip
-            tone="custom"
-            className="bg-amber-50 text-amber-800 border border-amber-200"
-          >
-            Demo
-          </Chip>
-        )}
+        {/* Demo chip intentionally hidden — visual noise next to the logo */}
         {!demoMode && (
           <nav className="flex items-center gap-1.5">
             <Link
