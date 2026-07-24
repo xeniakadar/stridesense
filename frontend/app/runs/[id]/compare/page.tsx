@@ -87,6 +87,9 @@ export default function CompareRunPage() {
               ? ` — small sample (${similar.pool_size} candidates)`
               : ""}
         </p>
+        <p className="mt-0.5 text-[11.5px] text-clay-hero">
+          match % weighs distance, pace, heart rate, effort, and conditions
+        </p>
       </div>
 
       {n === 0 ? (
@@ -130,7 +133,7 @@ export default function CompareRunPage() {
                       : ""}
                   </span>
                   <span className="text-[11px] font-medium text-leaf-deep">
-                    {s.score.toFixed(2)}
+                    {Math.round(s.score * 100)}% match
                   </span>
                 </Link>
               ))}

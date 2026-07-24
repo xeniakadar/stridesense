@@ -377,7 +377,7 @@ function SimilarRunsSection({ runId }: { runId: string }) {
               {formatDistance(r.distance_km)}
             </span>
             <span className="text-[11px] font-medium text-leaf-deep">
-              {r.score.toFixed(2)}
+              {Math.round(r.score * 100)}% match
             </span>
           </Link>
         ))}
