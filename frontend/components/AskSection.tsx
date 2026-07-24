@@ -9,6 +9,12 @@ import { api, ApiError } from "@/lib/api";
 import { formatDate, RUN_TYPE_LABELS } from "@/lib/format";
 import type { AskAnswer } from "@/lib/types";
 
+const STARTER_QUESTIONS = [
+  "How do I handle hot weather?",
+  "Tell me about my races",
+  "How has my pace changed?",
+];
+
 export function AskSection() {
   const demoMode = useDemoMode();
   const [question, setQuestion] = useState("");
@@ -16,6 +22,8 @@ export function AskSection() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AskAnswer | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const suggestions = demoMode ? demoQuestions : STARTER_QUESTIONS;
 
   useEffect(() => {
     if (!demoMode) return;
@@ -54,7 +62,7 @@ export function AskSection() {
         <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Ask your history</h2>
         <p className="text-[13px] text-clay mt-0.5">
           {demoMode
-            ? "Free-form questions are disabled in the demo — tap an example below."
+            ? "In this demo, try one of these — free-form ask works in the full app"
             : "e.g. “how do I handle hot weather?” — answers cite your own runs"}
         </p>
       </div>
@@ -81,9 +89,9 @@ export function AskSection() {
         </button>
       </form>
 
-      {demoMode && demoQuestions.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {demoQuestions.map((q) => (
+      {!result && suggestions.length > 0 && (
+        <div className="mt-3 -mx-4 px-4 flex gap-2 overflow-x-auto no-scrollbar">
+          {suggestions.map((q) => (
             <button
               key={q}
               type="button"
@@ -92,7 +100,7 @@ export function AskSection() {
                 setQuestion(q);
                 submit(q);
               }}
-              className="text-[11px] px-3 py-1.5 rounded-full bg-white/70 text-leaf-deep hover:bg-white disabled:opacity-50"
+              className="shrink-0 whitespace-nowrap text-[13px] px-3.5 py-1.5 rounded-[99px] bg-white border border-[#F0E8DD] text-[#0A6B59] hover:bg-white/80 disabled:opacity-50"
             >
               {q}
             </button>
@@ -123,6 +131,16 @@ export function AskSection() {
               </ul>
             </div>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              setResult(null);
+              setQuestion("");
+            }}
+            className="text-[13px] text-leaf-deep underline underline-offset-2"
+          >
+            Ask another question
+          </button>
         </div>
       )}
     </div>
