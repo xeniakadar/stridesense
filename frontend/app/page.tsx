@@ -1,8 +1,10 @@
 "use client";
 
+import { Info } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { AcwrExplainerPanel } from "@/components/AcwrInfo";
 import { DailyOverview } from "@/components/DailyOverview";
 import { useDemoMode } from "@/components/DemoProvider";
 import { Chip } from "@/components/ui";
@@ -22,6 +24,7 @@ export default function DashboardPage() {
   const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
   const [runs, setRuns] = useState<Run[] | null>(null);
   const [load, setLoad] = useState<LoadPoint | null>(null);
+  const [showAcwrInfo, setShowAcwrInfo] = useState(false);
 
   useEffect(() => {
     api
@@ -63,12 +66,21 @@ export default function DashboardPage() {
             : ""}
         </p>
         {load?.acwr != null && (
-          <span className="inline-flex items-center gap-1.5 bg-white/55 px-2.5 py-1 rounded-full">
-            <span className="w-[7px] h-[7px] rounded-full bg-leaf" />
-            <span className="text-xs text-leaf-deep">
-              Load {load.zone} · ACWR {load.acwr.toFixed(1)}
-            </span>
-          </span>
+          <>
+            <button
+              type="button"
+              onClick={() => setShowAcwrInfo((s) => !s)}
+              aria-expanded={showAcwrInfo}
+              className="tap-target inline-flex items-center gap-1.5 bg-white/55 px-2.5 py-1 rounded-full"
+            >
+              <span className="w-[7px] h-[7px] rounded-full bg-leaf" />
+              <span className="text-xs text-leaf-deep">
+                Load {load.zone} · ACWR {load.acwr.toFixed(1)}
+              </span>
+              <Info size={12} strokeWidth={1.75} className="text-leaf-deep/70" />
+            </button>
+            {showAcwrInfo && <AcwrExplainerPanel className="mt-2 max-w-sm" />}
+          </>
         )}
       </div>
 

@@ -1,7 +1,10 @@
 "use client";
 
+import { Info } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import { AcwrExplainerPanel } from "@/components/AcwrInfo";
 
 import { GlucoseTirChart } from "@/components/charts/GlucoseTirChart";
 import { MonthlyVolumeChart } from "@/components/charts/MonthlyVolumeChart";
@@ -164,6 +167,7 @@ function TrainingLoadBlock() {
   const [load, setLoad] = useState<LoadPoint[] | null>(null);
   // Default window also hides the chronic-baseline cold-start spike
   const [range, setRange] = useState<LoadRangeKey>("90d");
+  const [showInfo, setShowInfo] = useState(false);
   useEffect(() => {
     api
       .getTrainingLoad()
@@ -184,7 +188,17 @@ function TrainingLoadBlock() {
     <ChartCard
       title="Training load"
       action={
-        <span className="flex bg-leaf-pale/50 rounded-full p-[2px]">
+        <span className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setShowInfo((s) => !s)}
+            aria-label="What is ACWR?"
+            aria-expanded={showInfo}
+            className="tap-target text-leaf-deep/70 hover:text-leaf-deep"
+          >
+            <Info size={14} strokeWidth={1.75} />
+          </button>
+          <span className="flex bg-leaf-pale/50 rounded-full p-[2px]">
           {LOAD_RANGES.map((r) => (
             <button
               key={r.key}
@@ -198,9 +212,11 @@ function TrainingLoadBlock() {
               {r.label}
             </button>
           ))}
+          </span>
         </span>
       }
     >
+      {showInfo && <AcwrExplainerPanel className="mb-2.5" />}
       {filtered ? <TrainingLoadChart data={filtered} /> : <Loading />}
     </ChartCard>
   );
