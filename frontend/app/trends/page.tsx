@@ -1,6 +1,26 @@
 "use client";
 
-import { ChevronDown, ChevronUp, EyeOff, Plus } from "lucide-react";
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { EyeOff, GripVertical, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { useDemoMode } from "@/components/DemoProvider";
@@ -50,11 +70,119 @@ function readStored(): BlockConfig | null {
   }
 }
 
+/** The bar's visual chrome, shared by the in-list sortable item and the
+ * lifted DragOverlay copy. */
+function BarChrome({
+  title,
+  lifted,
+  grip,
+  trailing,
+}: {
+  title: string;
+  lifted?: boolean;
+  grip?: React.ReactNode;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 bg-white rounded-2xl px-3 py-2.5 border-[0.5px] ${
+        lifted
+          ? "border-leaf-soft shadow-[0_10px_24px_rgba(31,168,144,0.22)] rotate-[-1.2deg] scale-[1.02]"
+          : "border-line"
+      }`}
+    >
+      {grip ?? (
+        <GripVertical
+          size={15}
+          strokeWidth={1.75}
+          className={lifted ? "text-leaf" : "text-nav-idle"}
+        />
+      )}
+      <span className="flex-1 text-[13px] text-ink">{title}</span>
+      {trailing}
+    </div>
+  );
+}
+
+function SortableBar({
+  id,
+  title,
+  onHide,
+}: {
+  id: string;
+  title: string;
+  onHide: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  if (isDragging) {
+    // The vacated spot doubles as the drop indicator
+    return (
+      <div
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className="h-[44px] rounded-2xl border-[1.5px] border-dashed border-leaf-soft bg-leaf-pale/25"
+      />
+    );
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <BarChrome
+        title={title}
+        grip={
+          // Drag starts ONLY here — whole-bar drag would fight scrolling
+          <button
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            aria-label={`Reorder ${title}`}
+            className="p-1 -m-1 touch-none cursor-grab active:cursor-grabbing text-nav-idle hover:text-clay"
+          >
+            <GripVertical size={15} strokeWidth={1.75} />
+          </button>
+        }
+        trailing={
+          <button
+            onClick={onHide}
+            aria-label={`Hide ${title}`}
+            className="p-1.5 rounded-full text-clay hover:bg-line/50"
+          >
+            <EyeOff size={15} strokeWidth={1.75} />
+          </button>
+        }
+      />
+    </div>
+  );
+}
+
 export default function TrendsPage() {
   const demoMode = useDemoMode();
   const [glucose, setGlucose] = useState<GlucoseTrendPoint[] | null>(null);
   const [config, setConfig] = useState<BlockConfig | null>(null);
   const [editing, setEditing] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // Hold ~150ms (or slip 8px) before a touch becomes a drag, so taps
+    // and scrolls never start one
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 8 },
+    }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     api
@@ -94,15 +222,19 @@ export default function TrendsPage() {
 
   const blockById = new Map(registry.map((b) => [b.id, b]));
 
-  const move = (id: string, delta: -1 | 1) => {
+  const handleDragStart = (event: DragStartEvent) =>
+    setActiveId(String(event.active.id));
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
     setConfig((c) => {
       if (!c) return c;
-      const order = [...c.order];
-      const i = order.indexOf(id);
-      const j = i + delta;
-      if (i < 0 || j < 0 || j >= order.length) return c;
-      [order[i], order[j]] = [order[j], order[i]];
-      return { ...c, order };
+      const from = c.order.indexOf(String(active.id));
+      const to = c.order.indexOf(String(over.id));
+      if (from < 0 || to < 0) return c;
+      return { ...c, order: arrayMove(c.order, from, to) };
     });
   };
 
@@ -128,59 +260,60 @@ export default function TrendsPage() {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between px-1">
-        <h1 className="text-xl font-medium text-ink">Trends</h1>
-        <button
-          onClick={() => setEditing((e) => !e)}
-          className={`text-[12px] font-medium px-3 py-1 rounded-full ${
-            editing
-              ? "bg-leaf text-white"
-              : "text-leaf border-[0.5px] border-line hover:bg-line/40"
-          }`}
-        >
-          {editing ? "Done" : "Customize"}
-        </button>
+      <div className="px-1">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-medium text-ink">Trends</h1>
+          <button
+            onClick={() => setEditing((e) => !e)}
+            className={`text-[12px] font-medium px-3 py-1 rounded-full ${
+              editing
+                ? "bg-leaf text-white"
+                : "text-leaf border-[0.5px] border-line hover:bg-line/40"
+            }`}
+          >
+            {editing ? "Done" : "Customize"}
+          </button>
+        </div>
+        {editing && (
+          <p className="text-[11px] text-sand mt-1">
+            Drag to reorder · tap the eye to hide
+          </p>
+        )}
       </div>
 
       {editing ? (
         <>
-          <div className="space-y-1.5">
-            {config.order.map((id, i) => (
-              <div
-                key={id}
-                className="flex items-center justify-between bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
-              >
-                <span className="text-[13px] text-ink">
-                  {blockById.get(id)?.title ?? id}
-                </span>
-                <span className="flex items-center gap-1">
-                  <button
-                    onClick={() => move(id, -1)}
-                    disabled={i === 0}
-                    aria-label={`Move ${blockById.get(id)?.title} up`}
-                    className="p-1.5 rounded-full text-clay hover:bg-line/50 disabled:opacity-30"
-                  >
-                    <ChevronUp size={15} strokeWidth={1.75} />
-                  </button>
-                  <button
-                    onClick={() => move(id, 1)}
-                    disabled={i === config.order.length - 1}
-                    aria-label={`Move ${blockById.get(id)?.title} down`}
-                    className="p-1.5 rounded-full text-clay hover:bg-line/50 disabled:opacity-30"
-                  >
-                    <ChevronDown size={15} strokeWidth={1.75} />
-                  </button>
-                  <button
-                    onClick={() => hide(id)}
-                    aria-label={`Hide ${blockById.get(id)?.title}`}
-                    className="p-1.5 rounded-full text-clay hover:bg-line/50"
-                  >
-                    <EyeOff size={15} strokeWidth={1.75} />
-                  </button>
-                </span>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={() => setActiveId(null)}
+          >
+            <SortableContext
+              items={config.order}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-1.5">
+                {config.order.map((id) => (
+                  <SortableBar
+                    key={id}
+                    id={id}
+                    title={blockById.get(id)?.title ?? id}
+                    onHide={() => hide(id)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+            <DragOverlay>
+              {activeId ? (
+                <BarChrome
+                  title={blockById.get(activeId)?.title ?? activeId}
+                  lifted
+                />
+              ) : null}
+            </DragOverlay>
+          </DndContext>
 
           {config.hidden.length > 0 && (
             <div>
