@@ -7,7 +7,7 @@ import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
-import { formatDate, RUN_TYPE_LABELS } from "@/lib/format";
+import { formatDate, formatDistance, RUN_TYPE_LABELS } from "@/lib/format";
 import type { AskAnswer } from "@/lib/types";
 
 const STARTER_QUESTIONS = [
@@ -124,12 +124,18 @@ export function AskSection() {
               <ul className="space-y-1">
                 {result.cited_runs.map((run) => (
                   <li key={run.run_id}>
+                    {/* date · city / type · distance — the city keeps hot
+                        runs in cold months from reading as contradictions */}
                     <Link
                       href={`/runs/${run.run_id}`}
-                      className="text-sm text-leaf-deep hover:underline"
+                      className="block text-sm text-leaf-deep hover:underline"
                     >
-                      {formatDate(run.date)} — {RUN_TYPE_LABELS[run.run_type]},{" "}
-                      {run.distance_km} km
+                      {formatDate(run.date)}
+                      {run.city ? ` · ${run.city}` : ""}
+                      <span className="block text-[12px] text-clay">
+                        {RUN_TYPE_LABELS[run.run_type]} ·{" "}
+                        {formatDistance(run.distance_km)}
+                      </span>
                     </Link>
                   </li>
                 ))}

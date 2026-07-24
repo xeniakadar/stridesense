@@ -114,6 +114,7 @@ async def test_ask_endpoint_answers_with_citations(
             "run_type": "easy",
             "distance_km": 8.0,
             "score": 0.87,
+            "city": None,
         }
     ]
     assert mock_retrieve.await_count == 1

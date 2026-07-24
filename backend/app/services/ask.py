@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Run
+from app.services.cities import city_for_run
 from app.services.insights import InsightUnavailableError
 
 if TYPE_CHECKING:
@@ -70,16 +71,9 @@ def run_to_text(run: Run) -> str:
             parts.append(f"in cold {temp:.0f}°C weather")
         else:
             parts.append(f"in {temp:.0f}°C weather")
-    if run.start_lat is not None:
-        lat = run.start_lat
-        if 47 <= lat < 48:
-            parts.append("in Budapest")
-        elif 40 <= lat < 41:
-            parts.append("in NYC")
-        elif 38 <= lat < 39:
-            parts.append("in Lisbon")
-        elif 41 <= lat < 42:
-            parts.append("in Chicago")
+    city = city_for_run(run.start_lat, run.start_lng)
+    if city is not None:
+        parts.append(f"in {city}")
 
     if run.avg_pace_seconds_per_km is not None:
         pace = run.avg_pace_seconds_per_km
@@ -127,6 +121,10 @@ question about the user's own run history. Rules:
 numbers, paces, or facts.
 - Cite the date of every run you draw on, in long form, e.g. "your run \
 on May 14, 2026" — never ISO dates like 2026-05-14.
+- When several cited runs share a city or month, reference them \
+collectively ("your January runs in Phuket") instead of listing raw \
+dates; always name the city when the context provides one.
+- Keep every paragraph under ~45 words.
 - If the listed runs don't actually answer the question, say so plainly \
 instead of stretching.
 - Plain language, no jargon dumps.
