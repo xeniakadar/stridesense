@@ -11,7 +11,9 @@
   --color-ink: #4a2410;
   --color-clay: #7e4423;
   --color-clay-hero: #96502f; /* secondary text lightens on hero meshes */
-  --color-sand: #bb8a66;
+  /* Caption/label tier — must stay ≥4.5:1 on cream (WCAG AA); currently
+     4.91:1 on #fffbf7, 5.06:1 on white */
+  --color-sand: #96633f;
 
   /* Data teal family — ALL data encoding uses these */
   --color-leaf: #1fa890;
@@ -36,10 +38,15 @@ body {
   font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
 }
 
-/* Material 1 — gradient surface: hero areas ONLY, max one per screen.
-   v2 heroes are layered radial meshes of the palette hues at low opacity
-   over near-white warm bases. */
-.hero-gradient {
+/* Material 1 — gradient surfaces. Exactly three, each with one assigned
+   purpose; never invent a per-screen variant:
+   .gradient-overview  — the Home hero only
+   .gradient-detail    — the Run-detail hero only
+   .gradient-drilldown — compact headers on drill-down screens
+                         (Cities, Compare)
+   Max one gradient surface per screen. All are layered radial meshes of
+   the palette hues at low opacity over near-white warm bases. */
+.gradient-overview {
   background: radial-gradient(
       120% 90% at 15% 10%,
       rgba(255, 138, 107, 0.45),
@@ -64,7 +71,7 @@ body {
 }
 
 /* Run detail's own mesh — warmer, with the rose and lavender hues */
-.hero-gradient-detail {
+.gradient-detail {
   background: radial-gradient(
       120% 90% at 12% 12%,
       rgba(255, 138, 107, 0.42),
@@ -86,6 +93,43 @@ body {
       transparent 60%
     ),
     #fff1e8;
+}
+
+/* Drill-down headers — the overview mesh, dialed down so compact headers
+   don't compete with the screen's content */
+.gradient-drilldown {
+  background: radial-gradient(
+      120% 90% at 15% 10%,
+      rgba(255, 138, 107, 0.28),
+      transparent 60%
+    ),
+    radial-gradient(
+      110% 80% at 85% 15%,
+      rgba(255, 196, 107, 0.26),
+      transparent 60%
+    ),
+    radial-gradient(
+      120% 100% at 80% 90%,
+      rgba(95, 212, 190, 0.25),
+      transparent 65%
+    ),
+    #fff7f0;
+}
+
+/* Minimum touch target — expands the tappable area of a small control to
+   at least 44×44 without changing its visual size (the pseudo-element
+   receives the events on behalf of the control) */
+.tap-target {
+  position: relative;
+}
+.tap-target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
 }
 
 /* AI-text markdown: keep legacy-markdown content on the glass-card

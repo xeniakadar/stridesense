@@ -105,8 +105,16 @@ Rules:
 - If the data doesn't support a claim, don't make it.
 - Compare the run to the provided comparable runs when relevant.
 - Mention training load (ACWR) only if it's provided.
-- Be concise: 3-5 sentences. Plain language, no jargon dumps.
-- Output plain prose only: no markdown, no headers, no bold, no lists.
+- Plain language, no jargon dumps.
+- Structure the output exactly like this, and never as one long block:
+  1. First line: a one-sentence verdict, entirely bolded with **...** — \
+the single takeaway about this run.
+  2. Then at most 2 short paragraphs (1-2 sentences each), each with \
+exactly ONE key clause bolded.
+  3. Then, if specific comparable runs or numbers support the claim, \
+finish with 1-3 short evidence lines starting with "- ".
+- No headers, no other markdown beyond the bolding and evidence dashes.
+- Write dates in long form (e.g. "May 14, 2026"), never ISO like 2026-05-14.
 - You are not a doctor; do not give medical advice. For glucose, describe \
 patterns factually (e.g. "glucose trended down across the run") without \
 diagnosing.

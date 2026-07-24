@@ -11,12 +11,14 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartLegend } from "@/components/charts/ChartLegend";
 import { AXIS, LEAF, LEAF_MID, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { WeeklyMileagePoint } from "@/lib/types";
 
 export function WeeklyMileageChart({ data }: { data: WeeklyMileagePoint[] }) {
   return (
+    <>
     <ResponsiveContainer width="100%" height={240}>
       <BarChart
         data={data}
@@ -33,6 +35,7 @@ export function WeeklyMileageChart({ data }: { data: WeeklyMileagePoint[] }) {
         />
         <YAxis
           unit=" km"
+          allowDecimals={false}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
@@ -53,5 +56,12 @@ export function WeeklyMileageChart({ data }: { data: WeeklyMileagePoint[] }) {
         </Bar>
       </BarChart>
     </ResponsiveContainer>
+    <ChartLegend
+      items={[
+        { label: "This week", color: LEAF, shape: "square" },
+        { label: "Previous weeks", color: LEAF_MID, shape: "square" },
+      ]}
+    />
+    </>
   );
 }

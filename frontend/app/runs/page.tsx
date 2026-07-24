@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
 import { useDemoMode } from "@/components/DemoProvider";
+import { Chip, TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import {
   formatDate,
@@ -28,11 +29,9 @@ function SourceBadge({ source }: { source: DataSource }) {
     classes: "bg-line/70 text-clay",
   };
   return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded-full text-[10.5px] font-medium ${badge.classes}`}
-    >
+    <Chip tone="custom" className={badge.classes}>
       {badge.label}
-    </span>
+    </Chip>
   );
 }
 
@@ -98,12 +97,7 @@ function RunsPageInner() {
       return (
         <div className="text-center py-16">
           <p className="text-clay mb-4">No runs in {cityName}.</p>
-          <Link
-            href="/runs"
-            className="inline-block text-sm text-leaf hover:underline"
-          >
-            Show all runs
-          </Link>
+          <TertiaryLink href="/runs">Show all runs</TertiaryLink>
         </div>
       );
     }
@@ -112,7 +106,7 @@ function RunsPageInner() {
         <p className="text-clay mb-4">No runs yet.</p>
         <Link
           href="/runs/new"
-          className="inline-block bg-ink text-cream px-4 py-2 rounded-full text-sm hover:bg-clay"
+          className="inline-block bg-leaf-deep text-white px-4 py-2 rounded-full text-sm hover:bg-leaf"
         >
           Log your first run
         </Link>
@@ -128,7 +122,7 @@ function RunsPageInner() {
           {cityFilterActive && (
             <Link
               href="/runs"
-              className="text-[11px] bg-leaf-pale text-leaf-deep px-2.5 py-0.5 rounded-full hover:bg-leaf-soft"
+              className="tap-target text-[11px] font-medium bg-leaf-pale text-leaf-deep px-2.5 py-1 rounded-full hover:bg-leaf-soft"
               title="Clear city filter"
             >
               {cityName} ×

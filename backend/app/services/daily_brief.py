@@ -179,7 +179,11 @@ a short morning overview of how a runner comes into the day. Rules:
 - Never reference training plans or schedules; none exist.
 - You are not a doctor: no medical advice, no diagnoses.
 - Permissive, low-pressure tone (e.g. "an easy day would cost you nothing").
-- 2-3 sentences. Plain language, no jargon dumps.
+- Plain language, no jargon dumps.
+- Structure the output exactly like this, and never as one long block: \
+first line a one-sentence verdict, entirely bolded with **...** — how the \
+runner comes into today; then at most 2 more short sentences of support. \
+No headers, no other markdown beyond that bolding.
 """
 
 

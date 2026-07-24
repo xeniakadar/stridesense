@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Chip } from "@/components/ui";
 import { api, API_URL, ApiError } from "@/lib/api";
 import type { ImportJob, ImportJobStatus } from "@/lib/types";
 
@@ -23,11 +24,9 @@ const SOURCE_LABELS: Record<string, string> = {
 
 function JobStatusBadge({ status }: { status: ImportJobStatus }) {
   return (
-    <span
-      className={`inline-block px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_STYLES[status]}`}
-    >
+    <Chip tone="custom" className={STATUS_STYLES[status]}>
       {status}
-    </span>
+    </Chip>
   );
 }
 
@@ -145,14 +144,14 @@ export default function SettingsPage() {
             {/* Plain link: the OAuth dance is redirects, not fetch */}
             <a
               href={`${API_URL}/integrations/oura/authorize`}
-              className="bg-ink text-cream px-3.5 py-1.5 rounded-full text-xs hover:bg-clay"
+              className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf"
             >
               Connect
             </a>
             <button
               onClick={() => triggerGuarded("oura-sync", api.syncOura, "Oura sync")}
               disabled={busyAction === "oura-sync"}
-              className="border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
+              className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
             >
               {busyAction === "oura-sync" ? "Syncing…" : "Sync now"}
             </button>
@@ -175,7 +174,7 @@ export default function SettingsPage() {
             <button
               onClick={uploadExport}
               disabled={uploading}
-              className="bg-ink text-cream px-3.5 py-1.5 rounded-full text-xs hover:bg-clay disabled:opacity-50"
+              className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf disabled:bg-leaf-soft disabled:text-leaf-deep/70"
             >
               {uploading ? "Uploading…" : "Upload"}
             </button>
@@ -192,7 +191,7 @@ export default function SettingsPage() {
               triggerGuarded("weather-backfill", api.backfillWeather, "Weather backfill")
             }
             disabled={busyAction === "weather-backfill"}
-            className="border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
+            className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
           >
             {busyAction === "weather-backfill" ? "Backfilling…" : "Backfill weather"}
           </button>

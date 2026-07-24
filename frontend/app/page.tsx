@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { DailyOverview } from "@/components/DailyOverview";
 import { useDemoMode } from "@/components/DemoProvider";
+import { Chip } from "@/components/ui";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
 import {
@@ -50,7 +51,7 @@ export default function DashboardPage() {
       {/* Hero — the screen's single gradient surface. Full-bleed: escapes
           the column padding to the screen edges and reaches up behind the
           transparent top bar. */}
-      <div className="hero-gradient -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
+      <div className="gradient-overview -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
         <p className="text-[13px] text-clay-hero">Hi Xenia</p>
         <p className="mt-2 text-5xl font-medium text-ink leading-tight">
           {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}
@@ -110,11 +111,7 @@ export default function DashboardPage() {
                       : ""}
                   </span>
                 </span>
-                {!demoMode && (
-                  <span className="text-[10.5px] bg-leaf-pale text-leaf-deep px-2 py-0.5 rounded-full">
-                    {run.source}
-                  </span>
-                )}
+                {!demoMode && <Chip tone="green">{run.source}</Chip>}
               </Link>
             ))}
           </div>

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
+import { Chip, TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import {
   cityFromLat,
@@ -64,21 +65,23 @@ export default function RunDetailPage() {
   return (
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
-      <div className="hero-gradient-detail rounded-3xl px-5 pt-5 pb-5">
+      <div className="gradient-detail rounded-3xl px-5 pt-5 pb-5">
         <div className="flex justify-between items-center">
-          <Link href="/runs" aria-label="Back to runs" className="text-clay-hero">
+          <Link
+            href="/runs"
+            aria-label="Back to runs"
+            className="tap-target text-clay-hero"
+          >
             <ArrowLeft size={18} strokeWidth={1.75} />
           </Link>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] bg-white/55 text-clay-hero px-2.5 py-0.5 rounded-full capitalize">
-              {run.run_type}
-            </span>
+            <Chip tone="hero">{RUN_TYPE_LABELS[run.run_type] ?? run.run_type}</Chip>
             {!demoMode && (
               <>
                 <Link
                   href={`/runs/${run.id}/edit`}
                   aria-label="Edit run"
-                  className="p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
+                  className="tap-target p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
                 >
                   <Pencil size={13} strokeWidth={1.75} />
                 </Link>
@@ -86,7 +89,7 @@ export default function RunDetailPage() {
                   onClick={handleDelete}
                   disabled={deleting}
                   aria-label="Delete run"
-                  className="p-1.5 rounded-full bg-white/55 text-red-700 hover:bg-white/80 disabled:opacity-50"
+                  className="tap-target p-1.5 rounded-full bg-white/55 text-red-700 hover:bg-white/80 disabled:opacity-50"
                 >
                   <Trash2 size={13} strokeWidth={1.75} />
                 </button>
@@ -104,19 +107,19 @@ export default function RunDetailPage() {
         </p>
 
         <div className="flex gap-5 mt-3.5">
-          <HeroStat value={formatDuration(run.duration_seconds)} label="time" />
+          <HeroStat value={formatDuration(run.duration_seconds)} label="Time" />
           <HeroStat
             value={formatPace(run.avg_pace_seconds_per_km)}
-            label="pace"
+            label="Pace"
           />
           <HeroStat
             value={run.avg_hr ? `${run.avg_hr}` : "—"}
-            label="avg hr"
+            label="Avg HR"
           />
           {hasWeather && (
             <HeroStat
               value={`${Math.round(run.weather_temp_start_c!)}°C`}
-              label={city ? city.toLowerCase() : "temp"}
+              label={city ?? "Temp"}
             />
           )}
         </div>
@@ -239,9 +242,7 @@ export default function RunDetailPage() {
         </StatGrid>
         {run.notes && (
           <div className="mt-4">
-            <p className="text-[10.5px] uppercase tracking-wide text-sand mb-1">
-              Notes
-            </p>
+            <p className="text-[10.5px] text-sand mb-1">Notes</p>
             <p className="text-sm text-ink whitespace-pre-wrap">{run.notes}</p>
           </div>
         )}
@@ -326,7 +327,7 @@ function InsightSection({ runId }: { runId: string }) {
             onClick={handleRegenerate}
             disabled={regenerating}
             aria-label="Regenerate insight"
-            className="text-leaf-deep/70 hover:text-leaf-deep disabled:opacity-50"
+            className="tap-target text-leaf-deep/70 hover:text-leaf-deep disabled:opacity-50"
           >
             <RefreshCw
               size={14}
@@ -358,12 +359,7 @@ function SimilarRunsSection({ runId }: { runId: string }) {
     <section>
       <div className="flex justify-between items-baseline mb-2 mt-1 px-1">
         <p className="text-[13px] font-medium text-ink">Comparable runs</p>
-        <Link
-          href={`/runs/${runId}/compare`}
-          className="text-[11px] font-medium text-leaf hover:underline"
-        >
-          Compare →
-        </Link>
+        <TertiaryLink href={`/runs/${runId}/compare`}>Compare</TertiaryLink>
       </div>
       <div className="space-y-1.5">
         {runs.map((r) => (
@@ -376,7 +372,7 @@ function SimilarRunsSection({ runId }: { runId: string }) {
               {formatDate(r.date)} · {RUN_TYPE_LABELS[r.run_type]} ·{" "}
               {formatDistance(r.distance_km)}
             </span>
-            <span className="text-[11px] font-medium text-leaf">
+            <span className="text-[11px] font-medium text-leaf-deep">
               {r.score.toFixed(2)}
             </span>
           </Link>

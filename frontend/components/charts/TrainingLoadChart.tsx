@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 
+import { ChartLegend } from "@/components/charts/ChartLegend";
 import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { LoadPoint } from "@/lib/types";
@@ -30,6 +31,7 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
   }
 
   return (
+    <>
     <ResponsiveContainer width="100%" height={200}>
       <LineChart data={points} margin={{ top: 12, right: 12, bottom: 4, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={LINE} vertical={false} />
@@ -42,6 +44,7 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
           tickLine={false}
         />
         <YAxis
+          tickFormatter={(v: number) => Number(v).toFixed(1)}
           tick={{ fontSize: 11, fill: AXIS }}
           axisLine={false}
           tickLine={false}
@@ -54,6 +57,12 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
           fill={LEAF}
           fillOpacity={0.1}
           strokeOpacity={0}
+          label={{
+            value: "optimal 0.8–1.3",
+            position: "insideTopRight",
+            fontSize: 10,
+            fill: AXIS,
+          }}
         />
         <Tooltip
           {...TOOLTIP_STYLE}
@@ -69,5 +78,12 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
         />
       </LineChart>
     </ResponsiveContainer>
+    <ChartLegend
+      items={[
+        { label: "ACWR", color: LEAF },
+        { label: "Optimal range (0.8–1.3)", color: LEAF, shape: "band" },
+      ]}
+    />
+    </>
   );
 }

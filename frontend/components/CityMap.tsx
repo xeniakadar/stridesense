@@ -3,7 +3,6 @@
 import "leaflet/dist/leaflet.css";
 
 import { latLngBounds } from "leaflet";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import {
   CircleMarker,
@@ -13,6 +12,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 
+import { Chip, TertiaryLink } from "@/components/ui";
 import { LEAF, LEAF_MID, LEAF_SOFT } from "@/lib/colors";
 import { flagEmoji, formatKmTotal, formatMonthYear } from "@/lib/format";
 import type { CityStats } from "@/lib/types";
@@ -103,9 +103,7 @@ export function CityMap({ cities }: { cities: CityStats[] }) {
             <p className="text-sm font-medium text-ink">
               {flagEmoji(selected.country_code)} {selected.name}
             </p>
-            {selected.has_race && (
-              <span className="text-[10.5px] font-medium text-ember">race</span>
-            )}
+            {selected.has_race && <Chip tone="accent">Race</Chip>}
           </div>
           <p className="mt-1 text-[11.5px] text-clay">
             {selected.run_count} run{selected.run_count === 1 ? "" : "s"} ·{" "}
@@ -114,12 +112,9 @@ export function CityMap({ cities }: { cities: CityStats[] }) {
               ? ` · ${Math.round(selected.min_temp_c)}–${Math.round(selected.max_temp_c)}°C`
               : ""}
           </p>
-          <Link
-            href={viewRunsHref(selected)}
-            className="inline-block mt-1.5 text-[11px] font-medium text-leaf hover:underline"
-          >
-            View runs →
-          </Link>
+          <TertiaryLink href={viewRunsHref(selected)} className="mt-1.5">
+            View runs
+          </TertiaryLink>
         </div>
       )}
     </div>
