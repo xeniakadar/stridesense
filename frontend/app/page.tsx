@@ -10,6 +10,7 @@ import { useDemoMode } from "@/components/DemoProvider";
 import { Chip } from "@/components/ui";
 import { WeeklyMileageChart } from "@/components/charts/WeeklyMileageChart";
 import { api } from "@/lib/api";
+import { CARD_TITLES } from "@/lib/cards";
 import {
   cityFromCoords,
   formatDate,
@@ -86,7 +87,9 @@ export default function DashboardPage() {
 
       <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
         <div className="mb-3 flex justify-between items-baseline">
-          <h2 className="text-[20px] font-medium text-ink leading-snug">Weekly distance</h2>
+          <h2 className="text-[20px] font-medium text-ink leading-snug">
+            {CARD_TITLES["weekly-mileage"]}
+          </h2>
           <p className="text-[13px] text-sand">last 12 weeks</p>
         </div>
         {mileage ? (

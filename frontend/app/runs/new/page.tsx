@@ -198,7 +198,7 @@ export default function NewRunPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="bg-leaf-deep text-white px-5 py-2 rounded-full text-sm hover:bg-leaf disabled:bg-leaf-soft disabled:text-leaf-deep/70"
+            className="tap-target bg-leaf-deep text-white px-5 py-2 rounded-full text-sm hover:bg-leaf disabled:bg-leaf-soft disabled:text-leaf-deep/70"
           >
             {isSubmitting ? "Saving…" : "Save run"}
           </button>

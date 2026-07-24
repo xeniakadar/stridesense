@@ -8,8 +8,10 @@ import {
   CircleMarker,
   MapContainer,
   TileLayer,
+  Tooltip,
   useMap,
   useMapEvents,
+  ZoomControl,
 } from "react-leaflet";
 
 import { Chip, TertiaryLink } from "@/components/ui";
@@ -33,10 +35,18 @@ function FitToCities({ cities }: { cities: CityStats[] }) {
   const map = useMap();
   useEffect(() => {
     if (cities.length === 0) return;
-    map.fitBounds(latLngBounds(cities.map((c) => [c.lat, c.lng])), {
-      padding: [30, 30],
-      maxZoom: 6,
-    });
+    // Leaflet measures the container at mount, which can precede layout
+    // (dynamic import into a sized card) — the mismeasure is what renders
+    // as a dead band of unloaded tiles. Re-measure, then fit.
+    const fit = () => {
+      map.invalidateSize();
+      map.fitBounds(latLngBounds(cities.map((c) => [c.lat, c.lng])), {
+        padding: [48, 48],
+        maxZoom: 6, // a one-city dataset must not zoom to street level
+      });
+    };
+    const t = setTimeout(fit, 0);
+    return () => clearTimeout(t);
   }, [map, cities]);
   return null;
 }
@@ -58,14 +68,18 @@ export function CityMap({ cities }: { cities: CityStats[] }) {
         scrollWheelZoom
         className="h-full w-full"
         attributionControl
+        zoomControl={false}
       >
+        {/* Label-free basemap: the default mixes local + English label
+            locales; our own English city labels carry the information */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         />
+        <ZoomControl position="bottomright" />
         <FitToCities cities={cities} />
         <DismissOnMapTap onDismiss={() => setSelected(null)} />
-        {cities.map((city) => (
+        {cities.map((city, i) => (
           <CircleMarker
             key={`${city.name}-${city.lat}-${city.lng}`}
             center={[city.lat, city.lng]}
@@ -80,7 +94,20 @@ export function CityMap({ cities }: { cities: CityStats[] }) {
               bubblingMouseEvents: false,
             }}
             eventHandlers={{ click: () => setSelected(city) }}
-          />
+          >
+            {/* cities arrive sorted by run count — name the 3 biggest so
+                the view reads without tapping */}
+            {i < 3 && city.name !== "Unknown" && (
+              <Tooltip
+                permanent
+                direction="top"
+                offset={[0, -6]}
+                className="city-label"
+              >
+                {city.name}
+              </Tooltip>
+            )}
+          </CircleMarker>
         ))}
       </MapContainer>
 

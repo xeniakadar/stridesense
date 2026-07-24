@@ -106,7 +106,7 @@ function RunsPageInner() {
         <p className="text-clay mb-4">No runs yet.</p>
         <Link
           href="/runs/new"
-          className="inline-block bg-leaf-deep text-white px-4 py-2 rounded-full text-sm hover:bg-leaf"
+          className="tap-target inline-block bg-leaf-deep text-white px-4 py-2 rounded-full text-sm hover:bg-leaf"
         >
           Log your first run
         </Link>
