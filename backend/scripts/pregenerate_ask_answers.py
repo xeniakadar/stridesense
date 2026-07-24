@@ -29,6 +29,7 @@ QUESTIONS = [
     "How do I handle running in tropical heat?",
     "How has my easy pace changed since last year?",
     "What does my glucose do on long runs?",
+    "How do I handle running in hot weather?",
 ]
 
 

@@ -81,13 +81,17 @@ export function AskSection() {
           }
           className="flex-1 min-w-0 bg-white/70 border-[0.5px] border-white/80 rounded-full px-3.5 py-2 text-sm text-ink placeholder:text-sand focus:outline-none focus:ring-1 focus:ring-leaf disabled:text-sand"
         />
-        <button
-          type="submit"
-          disabled={loading || demoMode || !question.trim()}
-          className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:bg-leaf-soft disabled:text-leaf-deep/70"
-        >
-          {loading ? "Thinking…" : "Ask"}
-        </button>
+        {/* In demo mode the button would be permanently disabled — the
+            chips are the interaction, so don't render a dead CTA */}
+        {!demoMode && (
+          <button
+            type="submit"
+            disabled={loading || !question.trim()}
+            className="px-4 py-2 text-sm rounded-full bg-leaf-deep text-white disabled:bg-leaf-soft disabled:text-leaf-deep/70"
+          >
+            {loading ? "Thinking…" : "Ask"}
+          </button>
+        )}
       </form>
 
       {!result && suggestions.length > 0 && (

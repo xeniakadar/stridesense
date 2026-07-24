@@ -65,7 +65,9 @@ export default function RunDetailPage() {
   return (
     <div className="space-y-3">
       {/* Hero — the screen's single gradient surface */}
-      <div className="gradient-detail rounded-3xl px-5 pt-5 pb-5">
+      {/* run-{type} tints the mesh (green easy, orange interval, red
+          tempo, …); unknown types fall back to the neutral warm mix */}
+      <div className={`gradient-detail run-${run.run_type} rounded-3xl px-5 pt-5 pb-5`}>
         <div className="flex justify-between items-center">
           <Link
             href="/runs"
