@@ -16,7 +16,7 @@ import {
   ACWR_OPTIMAL_HIGH as OPTIMAL_HIGH,
   ACWR_OPTIMAL_LOW as OPTIMAL_LOW,
 } from "@/lib/acwr";
-import { AXIS, LEAF, LEAF_DEEP, LINE, TOOLTIP_STYLE } from "@/lib/colors";
+import { AXIS, LEAF, LINE, TOOLTIP_STYLE } from "@/lib/colors";
 import { formatDateShort } from "@/lib/format";
 import type { LoadPoint } from "@/lib/types";
 
@@ -66,15 +66,6 @@ export function TrainingLoadChart({ data }: { data: LoadPoint[] }) {
           fill={LEAF}
           fillOpacity={0.1}
           strokeOpacity={0}
-          label={{
-            value: `optimal zone ${OPTIMAL_LOW}–${OPTIMAL_HIGH}`,
-            // Bottom edge of the band, where the ACWR line rarely sits —
-            // insideTopRight collided with the line itself
-            position: "insideBottomRight",
-            fontSize: 10,
-            // Quietly legible: dark data green, not the axis brown
-            fill: LEAF_DEEP,
-          }}
         />
         <Tooltip
           {...TOOLTIP_STYLE}
