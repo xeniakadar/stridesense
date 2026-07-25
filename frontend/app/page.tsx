@@ -30,15 +30,6 @@ const TODAY_RECS: Record<string, { title: string; km: string }> = {
   danger: { title: "Recovery day", km: "Rest or short jog" },
 };
 
-// One-clause plain-language reason per zone, appended to the load line
-const ZONE_REASONS: Record<string, string> = {
-  optimal: "nothing pushing you either way",
-  building: "load is ramping, with room to grow",
-  detraining: "load has been light lately",
-  caution: "load is running a bit high",
-  danger: "load is well above your normal",
-};
-
 export default function DashboardPage() {
   const demoMode = useDemoMode();
   const [mileage, setMileage] = useState<WeeklyMileagePoint[] | null>(null);
@@ -76,49 +67,52 @@ export default function DashboardPage() {
           the column padding to the screen edges and reaches up behind the
           transparent top bar. */}
       <div className="gradient-overview -mx-4 -mt-2 rounded-b-3xl px-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-5">
-        {/* Stacked hero (option A): greeting sits level with the nav-bar
-            actions; the metric carries its meta inline; one full-width
-            strip unifies the recommendation with the load status */}
+        {/* Two-column hero (option B): metric + meta + load line left,
+            Today panel right — top-aligned, equal heights */}
         <p className="text-[13px] text-clay-hero">Hi Xenia</p>
-        <p className="mt-3 text-5xl font-medium text-ink leading-none">
-          {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}{" "}
-          <span className="text-sm font-normal text-clay-hero">
-            this week
-            {runsThisWeek !== null
-              ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
-              : ""}
-          </span>
-        </p>
-        {rec && load?.acwr != null && (
-          <div className="mt-3.5 bg-white/65 border-[0.5px] border-white/90 rounded-2xl px-3.5 py-3">
-            <div className="flex justify-between items-baseline gap-3">
-              <p className="text-[14px] font-medium text-ink">
-                Today: {rec.title.toLowerCase()}
-              </p>
-              <span className="text-[12px] text-clay-hero shrink-0">
-                {rec.km}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowAcwrInfo((s) => !s)}
-              aria-expanded={showAcwrInfo}
-              className="tap-target mt-1.5 flex items-center gap-1.5 text-[11.5px] text-leaf-deep text-left"
-            >
-              <span className="w-[6px] h-[6px] rounded-full bg-leaf shrink-0" />
-              <span>
-                Load {load.zone} (ACWR {load.acwr.toFixed(1)})
-                {ZONE_REASONS[load.zone] ? ` — ${ZONE_REASONS[load.zone]}` : ""}
-              </span>
-              <Info
-                size={11}
-                strokeWidth={1.75}
-                className="text-leaf-deep/70 shrink-0"
-              />
-            </button>
-            {showAcwrInfo && <AcwrExplainerPanel className="mt-2" />}
+        <div className="mt-3.5 flex items-stretch gap-3">
+          <div className="flex-[1.1] min-w-0">
+            <p className="text-[40px] font-medium text-ink leading-none">
+              {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}
+            </p>
+            <p className="mt-1 text-[12.5px] text-clay-hero">
+              this week
+              {runsThisWeek !== null
+                ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
+                : ""}
+            </p>
+            {load?.acwr != null && (
+              <button
+                type="button"
+                onClick={() => setShowAcwrInfo((s) => !s)}
+                aria-expanded={showAcwrInfo}
+                className="tap-target mt-2.5 flex items-center gap-1.5 text-[11.5px] text-leaf-deep text-left"
+              >
+                <span className="w-[6px] h-[6px] rounded-full bg-leaf shrink-0" />
+                <span>
+                  Load {load.zone} · {load.acwr.toFixed(1)}
+                </span>
+                <Info
+                  size={11}
+                  strokeWidth={1.75}
+                  className="text-leaf-deep/70 shrink-0"
+                />
+              </button>
+            )}
           </div>
-        )}
+          {rec && (
+            <div className="flex-1 bg-white/65 border-[0.5px] border-white/90 rounded-2xl px-3 py-2.5">
+              <p className="text-[10px] font-medium uppercase tracking-[0.06em] text-clay-hero">
+                Today
+              </p>
+              <p className="mt-1 text-[14px] font-medium text-ink leading-[1.25]">
+                {rec.title}
+              </p>
+              <p className="mt-1 text-[12px] text-clay-hero">{rec.km}</p>
+            </div>
+          )}
+        </div>
+        {showAcwrInfo && <AcwrExplainerPanel className="mt-2.5" />}
       </div>
 
       <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
