@@ -386,11 +386,7 @@ function PaceLineChart({
       items={[
         { label: "This run", color: LEAF_BRIGHT, shape: "dot" },
         { label: "Comparable runs", color: LEAF_MID, shape: "dot" },
-        {
-          label: "Trend — higher is faster (pace axis is inverted)",
-          color: LEAF_SOFT,
-          dashed: true,
-        },
+        { label: "Trend", color: LEAF_SOFT, dashed: true },
       ]}
     />
     </>
