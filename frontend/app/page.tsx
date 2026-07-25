@@ -23,9 +23,9 @@ import type { LoadPoint, Run, WeeklyMileagePoint } from "@/lib/types";
 // Deterministic per-zone suggestion (same permissive, non-prescriptive
 // voice as the daily brief) — no LLM involved
 const TODAY_RECS: Record<string, { title: string; km: string }> = {
-  optimal: { title: "Easy run", km: "6–8 km" },
-  building: { title: "Easy run", km: "6–8 km" },
-  detraining: { title: "Easy run", km: "6–8 km" },
+  optimal: { title: "Easy run or rest", km: "6–8 km" },
+  building: { title: "Easy run or rest", km: "6–8 km" },
+  detraining: { title: "Easy run or rest", km: "6–8 km" },
   caution: { title: "Short & easy", km: "3–5 km" },
   danger: { title: "Recovery day", km: "Rest or short jog" },
 };
@@ -66,7 +66,7 @@ export default function DashboardPage() {
       {/* Hero — the screen's single gradient surface. Full-bleed: escapes
           the column padding to the screen edges and reaches up behind the
           transparent top bar. */}
-      <div className="gradient-overview -mx-4 -mt-2 rounded-b-3xl px-5 pt-16 pb-6">
+      <div className="gradient-overview -mx-4 -mt-2 rounded-b-3xl px-5 pt-[calc(4rem+env(safe-area-inset-top))] pb-6">
         {/* True two-column row: metric left, compact Today panel right,
             vertically centred beside it. flex-wrap lets the panel drop
             just below the metric on very narrow screens. */}
