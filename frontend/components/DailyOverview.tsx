@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AiText } from "@/components/AiText";
+import { ReadMore } from "@/components/ReadMore";
 import { api } from "@/lib/api";
 import type { DailyBrief } from "@/lib/types";
 
@@ -25,7 +26,9 @@ export function DailyOverview() {
           The overview isn't available right now — check back in a bit.
         </p>
       ) : brief ? (
-        <AiText text={brief.content} className="mt-2" />
+        <ReadMore className="mt-2">
+          <AiText text={brief.content} />
+        </ReadMore>
       ) : (
         <p className="mt-2 text-sm text-clay">Reading your morning…</p>
       )}

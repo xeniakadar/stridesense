@@ -9,6 +9,7 @@ import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { Confetti } from "@/components/Confetti";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
+import { ReadMore } from "@/components/ReadMore";
 import { Chip } from "@/components/ui";
 import { VsSimilarRuns } from "@/components/VsSimilarRuns";
 import { api, ApiError } from "@/lib/api";
@@ -344,7 +345,11 @@ function InsightSection({ runId }: { runId: string }) {
       </div>
       {loading && <p className="mt-2 text-sm text-clay">Analyzing this run…</p>}
       {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
-      {insight && <AiText text={insight} className="mt-2" />}
+      {insight && (
+        <ReadMore className="mt-2">
+          <AiText text={insight} />
+        </ReadMore>
+      )}
     </section>
   );
 }
