@@ -33,7 +33,6 @@ def test_build_daily_context_full_data() -> None:
     data = DailyBriefData(
         sleep_score=82,
         sleep_score_avg=76.5,
-        readiness_score=79,
         acwr=1.1,
         zone="optimal",
         days_since_hard_run=3,
@@ -41,7 +40,6 @@ def test_build_daily_context_full_data() -> None:
     context = build_daily_context(data, date(2026, 7, 22))
     assert "sleep" in context.lower()
     assert "82" in context and "76.5" in context
-    assert "Readiness" in context and "79" in context
     assert "1.1" in context and "optimal" in context
     assert "3 day(s) ago" in context
 
@@ -50,14 +48,12 @@ def test_build_daily_context_omits_missing_sections() -> None:
     data = DailyBriefData(
         sleep_score=None,
         sleep_score_avg=None,
-        readiness_score=None,
         acwr=1.4,
         zone="caution",
         days_since_hard_run=None,
     )
     context = build_daily_context(data, date(2026, 7, 22))
     assert "sleep" not in context.lower()
-    assert "Readiness" not in context
     assert "hard run" not in context.lower()
     assert "Training load" in context and "1.4" in context
 
@@ -101,7 +97,6 @@ async def test_daily_brief_without_sleep_is_load_only(
     assert res.status_code == 200
     data = mock_generate.await_args.args[0]
     assert data.sleep_score is None
-    assert data.readiness_score is None
     assert data.acwr is not None  # load section is the only content
     context = build_daily_context(data, date.today())
     assert "sleep" not in context.lower()
@@ -271,10 +266,37 @@ async def test_sleep_older_than_grace_window_is_omitted(
     assert res.status_code == 200
     data = gen.await_args.args[0]
     assert data.sleep_score is None
-    assert data.readiness_score is None  # readiness follows the same record
     context = build_daily_context(data, date.today())
     assert "sleep" not in context.lower()
-    assert "Readiness" not in context
+
+
+async def test_readiness_payload_is_never_narrated(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    """Stored readiness data is fine — the brief just doesn't mention it."""
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        SleepRecord(
+            user_id=isolated_user.id,
+            date=date.today(),
+            source=DataSource.OURA,
+            sleep_quality=71,
+            sleep_hours=7.1,
+            raw_payload={"daily_readiness": {"score": 88}},
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(return_value="Sleep and load only.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+
+    assert res.status_code == 200
+    data = gen.await_args.args[0]
+    assert data.sleep_score == 71
+    context = build_daily_context(data, date.today())
+    assert "readiness" not in context.lower()
+    assert "88" not in context
 
 
 # --- zone consistency: the brief never narrates a stale load zone ---
