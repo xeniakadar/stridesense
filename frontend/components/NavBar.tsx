@@ -4,11 +4,9 @@ import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useDemoMode } from "@/components/DemoProvider";
 import { Logo } from "@/components/Logo";
 
 export function NavBar() {
-  const demoMode = useDemoMode();
   // On the homepage the bar floats transparent over the full-bleed hero
   // mesh and scrolls away with it; everywhere else it's the sticky
   // near-white bar.
@@ -26,25 +24,25 @@ export function NavBar() {
         <Link href="/" className="tap-target">
           <Logo size={16} />
         </Link>
-        {/* Demo chip intentionally hidden — visual noise next to the logo */}
-        {!demoMode && (
-          <nav className="flex items-center gap-1.5">
-            <Link
-              href="/settings"
-              aria-label="Settings"
-              className="tap-target p-2 rounded-full text-clay hover:bg-line/60"
-            >
-              <Settings size={17} strokeWidth={1.75} />
-            </Link>
-            <Link
-              href="/runs/new"
-              aria-label="Add run"
-              className="tap-target p-2 rounded-full bg-leaf-deep text-white hover:bg-leaf"
-            >
-              <Plus size={16} strokeWidth={2} />
-            </Link>
-          </nav>
-        )}
+        {/* Demo chip intentionally hidden — visual noise next to the logo.
+            Settings and add-run stay visible in demo as a showcase; the
+            pages themselves neutralize any state-changing action. */}
+        <nav className="flex items-center gap-1.5">
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            className="tap-target p-2 rounded-full text-clay hover:bg-line/60"
+          >
+            <Settings size={17} strokeWidth={1.75} />
+          </Link>
+          <Link
+            href="/runs/new"
+            aria-label="Add run"
+            className="tap-target p-2 rounded-full bg-leaf-deep text-white hover:bg-leaf"
+          >
+            <Plus size={16} strokeWidth={2} />
+          </Link>
+        </nav>
       </div>
     </header>
   );

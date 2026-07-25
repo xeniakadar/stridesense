@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { api, ApiError } from "@/lib/api";
 import type { RunCreate, RunType } from "@/lib/types";
 
@@ -45,6 +46,8 @@ type FormOutput = z.output<typeof FormSchema>;
 
 export default function NewRunPage() {
   const router = useRouter();
+  const demoMode = useDemoMode();
+  const [demoNotice, setDemoNotice] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
@@ -72,6 +75,13 @@ export default function NewRunPage() {
 
     if (duration_seconds <= 0) {
       setSubmitError("Duration must be greater than zero.");
+      return;
+    }
+
+    // Demo showcase: the form works end to end, but nothing is saved —
+    // no API call leaves the page
+    if (demoMode) {
+      setDemoNotice(true);
       return;
     }
 
@@ -191,6 +201,12 @@ export default function NewRunPage() {
         {submitError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-900">
             {submitError}
+          </div>
+        )}
+
+        {demoNotice && (
+          <div className="p-3 bg-leaf-pale border-[0.5px] border-leaf-soft rounded-2xl text-sm text-leaf-deep">
+            This is a demo — runs can&apos;t be saved here
           </div>
         )}
 
