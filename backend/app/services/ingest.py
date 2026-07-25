@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.base import Base
 from app.models import GlucoseDailyRecord, ImportJob, Run, RunGlucoseSample, SleepRecord
 from app.models.enums import DataSource, ImportJobStatus, ImportJobType
+from app.services.daily_brief import invalidate_todays_brief
 
 
 async def _upsert_on_constraint(
@@ -55,6 +56,9 @@ async def upsert_run(session: AsyncSession, values: dict[str, Any]) -> None:
         conflict_keys=("user_id", "source", "external_id"),
         preserve_existing=("start_lat", "start_lng"),
     )
+    # Imported runs move today's load zone like manual ones do —
+    # idempotent, so calling once per upserted run is fine
+    await invalidate_todays_brief(session, values["user_id"])
 
 
 async def upsert_sleep_record(session: AsyncSession, values: dict[str, Any]) -> None:

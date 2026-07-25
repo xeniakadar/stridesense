@@ -34,6 +34,13 @@ MAX_TOKENS = 300
 HARD_RUN_TYPES = {RunType.INTERVAL, RunType.TEMPO, RunType.RACE}
 
 
+# How a record's age (days between its date and today) reads in prose —
+# the context must state it honestly so the narration can't sell a stale
+# night as fresh. Older than the window: the sleep section is omitted.
+SLEEP_AGE_LABELS = {0: "last night", 1: "the night before last", 2: "two nights ago"}
+SLEEP_GRACE_DAYS = 2
+
+
 @dataclass
 class DailyBriefData:
     sleep_score: int | None
@@ -42,6 +49,8 @@ class DailyBriefData:
     acwr: float | None
     zone: str | None
     days_since_hard_run: int | None
+    sleep_age_days: int | None = None
+    sleep_hours: float | None = None
 
     def has_anything(self) -> bool:
         return any(
@@ -67,6 +76,13 @@ async def invalidate_daily_briefs(
             DailyBrief.user_id == user_id, DailyBrief.date.in_(dates)
         )
     )
+
+
+async def invalidate_todays_brief(session: AsyncSession, user_id: UUID) -> None:
+    """Runs move today's load zone — call whenever a run is created,
+    imported, updated, or deleted, so a cached brief can't keep narrating
+    a zone /training-load no longer reports. Doesn't commit."""
+    await invalidate_daily_briefs(session, user_id, [date_type.today()])
 
 
 def _current_load_point(
@@ -97,13 +113,15 @@ async def gather_daily_data(
     session: AsyncSession, user_id: UUID, today: date_type
 ) -> DailyBriefData:
     """Collect the brief's inputs from existing tables. Missing data stays None."""
-    # Last night's sleep: the record dated today (night into this morning),
-    # falling back to yesterday's if this morning's sync hasn't landed yet.
+    # Most recent sleep within the grace window (dated today, yesterday,
+    # or two days ago — a late sync shouldn't blank the section), newest
+    # first. The record's age travels with the data so the context can
+    # label it honestly.
     result = await session.execute(
         select(SleepRecord)
         .where(
             SleepRecord.user_id == user_id,
-            SleepRecord.date >= today - timedelta(days=1),
+            SleepRecord.date >= today - timedelta(days=SLEEP_GRACE_DAYS),
             SleepRecord.date <= today,
         )
         .order_by(SleepRecord.date.desc())
@@ -111,6 +129,8 @@ async def gather_daily_data(
     last_night = result.scalars().first()
 
     sleep_score = last_night.sleep_quality if last_night else None
+    sleep_hours = last_night.sleep_hours if last_night else None
+    sleep_age_days = (today - last_night.date).days if last_night else None
     readiness_score = None
     if last_night and last_night.raw_payload:
         readiness_score = last_night.raw_payload.get("daily_readiness", {}).get(
@@ -142,6 +162,8 @@ async def gather_daily_data(
         acwr=acwr,
         zone=zone,
         days_since_hard_run=days_since_hard_run,
+        sleep_age_days=sleep_age_days,
+        sleep_hours=sleep_hours,
     )
 
 
@@ -150,13 +172,18 @@ def build_daily_context(data: DailyBriefData, today: date_type) -> str:
     lines: list[str] = [f"Today is {today.isoformat()}."]
 
     if data.sleep_score is not None:
-        lines.append("\n## Last night's sleep (Oura score, 0-100)")
+        age = SLEEP_AGE_LABELS.get(data.sleep_age_days or 0, "last night")
+        lines.append(f"\n## Sleep — {age} (Oura score, 0-100)")
+        lines.append(f"- Which night: {age}")
         lines.append(f"- Score: {data.sleep_score}")
+        if data.sleep_hours is not None:
+            lines.append(f"- Duration: {data.sleep_hours} h")
         if data.sleep_score_avg is not None:
             lines.append(f"- This runner's own average: {data.sleep_score_avg}")
 
     if data.readiness_score is not None:
-        lines.append("\n## Readiness (Oura score, 0-100)")
+        age = SLEEP_AGE_LABELS.get(data.sleep_age_days or 0, "last night")
+        lines.append(f"\n## Readiness (Oura score, 0-100), from {age}")
         lines.append(f"- Score: {data.readiness_score}")
 
     if data.acwr is not None:
@@ -179,11 +206,13 @@ a short morning overview of how a runner comes into the day. Rules:
 - Never reference training plans or schedules; none exist.
 - You are not a doctor: no medical advice, no diagnoses.
 - Permissive, low-pressure tone (e.g. "an easy day would cost you nothing").
+- Refer to sleep by the age the context states ("last night", "the night \
+before last", "two nights ago") — never present an older night as last \
+night's.
 - Plain language, no jargon dumps.
-- Structure the output exactly like this, and never as one long block: \
-first line a one-sentence verdict, entirely bolded with **...** — how the \
-runner comes into today; then at most 2 more short sentences of support. \
-No headers, no other markdown beyond that bolding.
+- 2-4 sentences. Markdown bold is allowed for AT MOST ONE short key \
+phrase — the single most important takeaway. No headers, no lists, no \
+other markdown.
 """
 
 

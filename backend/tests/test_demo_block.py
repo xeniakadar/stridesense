@@ -116,7 +116,7 @@ _GEN_END = date(2026, 7, 23)
 
 def _serialize(dataset) -> str:
     """Canonical byte representation of a generated dataset."""
-    runs, samples, daily = dataset
+    runs, samples, daily, sleep = dataset
     return json.dumps(
         {
             "runs": [
@@ -134,6 +134,9 @@ def _serialize(dataset) -> str:
                 [str(s.run_id), s.elapsed_seconds, s.glucose_mg_dl] for s in samples
             ],
             "daily": [[d.date.isoformat(), d.avg_glucose_mg_dl] for d in daily],
+            "sleep": [
+                [s.date.isoformat(), s.sleep_quality, s.sleep_hours] for s in sleep
+            ],
         }
     )
 
@@ -145,7 +148,7 @@ def test_generation_is_deterministic() -> None:
 
 
 def test_every_run_is_located_and_user_classified() -> None:
-    runs, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
+    runs, _, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
     assert 300 <= len(runs) <= 420  # ~350: 4-5 runs/week over ~19 months
     assert all(r.start_lat is not None and r.start_lng is not None for r in runs)
     assert all(r.run_type_source == RunTypeSource.USER for r in runs)
@@ -153,7 +156,7 @@ def test_every_run_is_located_and_user_classified() -> None:
 
 
 def test_fitness_arc_easy_pace_improves_year_over_year() -> None:
-    runs, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
+    runs, _, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
 
     def avg_easy_pace(year: int, month: int) -> float:
         paces = [
@@ -171,7 +174,7 @@ def test_fitness_arc_easy_pace_improves_year_over_year() -> None:
 
 
 def test_races_match_the_calendar() -> None:
-    runs, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
+    runs, _, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
     races = [r for r in runs if r.run_type == RunType.RACE]
     assert len(races) == 4
     by_date = {r.date: r for r in races}
@@ -197,7 +200,7 @@ def test_city_assignment_follows_the_residence_timeline() -> None:
     assert city_on(date(2026, 6, 14)) is CITIES["nyc"]
 
     # And that every generated run wears its date's city coordinates
-    runs, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
+    runs, _, _, _ = generate_dataset(_GEN_USER, end=_GEN_END)
     for r in runs:
         city = city_on(r.date)
         assert (r.start_lat, r.start_lng) == (city.lat, city.lng)

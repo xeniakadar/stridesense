@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import DailyBrief
+from app.models import DailyBrief, SleepRecord
+from app.models.enums import DataSource
 from app.services.daily_brief import (
     DAILY_BRIEF_MODEL,
     DailyBriefData,
@@ -214,3 +215,127 @@ async def test_invalidate_daily_briefs_deletes_matching_dates(
         select(DailyBrief.content).where(DailyBrief.user_id == isolated_user.id)
     )
     assert list(remaining.scalars().all()) == ["untouched"]
+
+
+# --- sleep grace window: newest record within 3 days, honestly labeled ---
+
+
+async def test_sleep_grace_window_uses_yesterdays_record(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        SleepRecord(
+            user_id=isolated_user.id,
+            date=date.today() - timedelta(days=1),
+            source=DataSource.OURA,
+            sleep_quality=68,
+            sleep_hours=6.4,
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(return_value="Steady enough.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+
+    assert res.status_code == 200
+    data = gen.await_args.args[0]
+    assert data.sleep_score == 68
+    assert data.sleep_hours == 6.4
+    assert data.sleep_age_days == 1
+    context = build_daily_context(data, date.today())
+    assert "the night before last" in context
+    assert "last night" not in context  # never sold as fresh
+
+
+async def test_sleep_older_than_grace_window_is_omitted(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        SleepRecord(
+            user_id=isolated_user.id,
+            date=date.today() - timedelta(days=4),
+            source=DataSource.OURA,
+            sleep_quality=88,
+            raw_payload={"daily_readiness": {"score": 90}},
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(return_value="Load only.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+
+    assert res.status_code == 200
+    data = gen.await_args.args[0]
+    assert data.sleep_score is None
+    assert data.readiness_score is None  # readiness follows the same record
+    context = build_daily_context(data, date.today())
+    assert "sleep" not in context.lower()
+    assert "Readiness" not in context
+
+
+# --- zone consistency: the brief never narrates a stale load zone ---
+
+
+async def test_new_run_shifting_zone_regenerates_brief(
+    client: AsyncClient, isolated_user
+) -> None:
+    # One run today: acute >> chronic → an extreme zone
+    await client.post("/runs", json=_run_payload(date.today()))
+
+    gen = AsyncMock(side_effect=lambda data, today: f"Zone is {data.zone}.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        first = await client.get("/daily-brief")
+        assert first.status_code == 200
+        first_zone = gen.await_args.args[0].zone
+        assert first.json()["content"] == f"Zone is {first_zone}."
+
+        # Backfilled runs raise chronic load — today's zone shifts
+        for days_ago in (8, 12, 16, 20, 24):
+            await client.post(
+                "/runs", json=_run_payload(date.today() - timedelta(days=days_ago))
+            )
+
+        second = await client.get("/daily-brief")
+
+    assert second.status_code == 200
+    second_zone = gen.await_args.args[0].zone
+    assert second_zone != first_zone
+    # Regenerated (not served from cache) and mentions the new zone
+    assert gen.await_count == 2
+    assert second.json()["content"] == f"Zone is {second_zone}."
+
+
+async def test_stale_stored_zone_regenerates_on_read(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    """Even if a cached row survives invalidation, a generation-time zone
+    that no longer matches the live one must trigger regeneration."""
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        DailyBrief(
+            user_id=isolated_user.id,
+            date=date.today(),
+            content="stale narration",
+            model=DAILY_BRIEF_MODEL,
+            acwr_zone="__never-matches__",
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(side_effect=lambda data, today: f"Zone is {data.zone}.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+        assert res.status_code == 200
+        live_zone = gen.await_args.args[0].zone
+        assert res.json()["content"] == f"Zone is {live_zone}."
+
+        # The row now stores the live zone — a second read is a cache hit
+        # (were the stored zone still stale, this would regenerate again)
+        res2 = await client.get("/daily-brief")
+
+    assert res2.json()["content"] == f"Zone is {live_zone}."
+    assert gen.await_count == 1

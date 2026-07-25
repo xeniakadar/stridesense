@@ -56,7 +56,11 @@ async def pregenerate_daily_brief(session, user_id) -> None:
     content = await generate_daily_brief(data, today)
     session.add(
         DailyBrief(
-            user_id=user_id, date=today, content=content, model=DAILY_BRIEF_MODEL
+            user_id=user_id,
+            date=today,
+            content=content,
+            model=DAILY_BRIEF_MODEL,
+            acwr_zone=data.zone,
         )
     )
     await session.commit()
