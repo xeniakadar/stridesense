@@ -80,24 +80,24 @@ export default function RunDetailPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Chip tone="hero">{RUN_TYPE_LABELS[run.run_type] ?? run.run_type}</Chip>
+            {/* Edit is a demo showcase (the form intercepts saves);
+                delete stays hidden — nothing destructive in demo */}
+            <Link
+              href={`/runs/${run.id}/edit`}
+              aria-label="Edit run"
+              className="tap-target p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
+            >
+              <Pencil size={13} strokeWidth={1.75} />
+            </Link>
             {!demoMode && (
-              <>
-                <Link
-                  href={`/runs/${run.id}/edit`}
-                  aria-label="Edit run"
-                  className="tap-target p-1.5 rounded-full bg-white/55 text-clay-hero hover:bg-white/80"
-                >
-                  <Pencil size={13} strokeWidth={1.75} />
-                </Link>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  aria-label="Delete run"
-                  className="tap-target p-1.5 rounded-full bg-white/55 text-red-700 hover:bg-white/80 disabled:opacity-50"
-                >
-                  <Trash2 size={13} strokeWidth={1.75} />
-                </button>
-              </>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                aria-label="Delete run"
+                className="tap-target p-1.5 rounded-full bg-white/55 text-red-700 hover:bg-white/80 disabled:opacity-50"
+              >
+                <Trash2 size={13} strokeWidth={1.75} />
+              </button>
             )}
           </div>
         </div>

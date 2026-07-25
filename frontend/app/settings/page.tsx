@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { Chip } from "@/components/ui";
 import { api, API_URL, ApiError } from "@/lib/api";
 import type { ImportJob, ImportJobStatus } from "@/lib/types";
@@ -31,14 +32,17 @@ function JobStatusBadge({ status }: { status: ImportJobStatus }) {
 }
 
 export default function SettingsPage() {
+  const demoMode = useDemoMode();
   const [jobs, setJobs] = useState<ImportJob[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [showAllJobs, setShowAllJobs] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refreshJobs = useCallback(() => {
+    if (demoMode) return; // jobs section never renders in demo
     api
       .listImportJobs()
       .then((next) => {
@@ -46,7 +50,7 @@ export default function SettingsPage() {
         setError(null);
       })
       .catch((e: ApiError) => setError(e.message));
-  }, []);
+  }, [demoMode]);
 
   useEffect(() => {
     refreshJobs();
@@ -141,21 +145,36 @@ export default function SettingsPage() {
             Sleep, readiness, and recovery via OAuth.
           </p>
           <div className="flex gap-3">
-            {/* Plain link: the OAuth dance is redirects, not fetch */}
-            <a
-              href={`${API_URL}/integrations/oura/authorize`}
-              className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf"
-            >
-              Connect
-            </a>
+            {demoMode ? (
+              // No href in demo — nothing may reach the API
+              <button
+                disabled
+                className="tap-target bg-leaf-soft text-leaf-deep/70 px-3.5 py-1.5 rounded-full text-xs cursor-not-allowed"
+              >
+                Connect
+              </button>
+            ) : (
+              // Plain link: the OAuth dance is redirects, not fetch
+              <a
+                href={`${API_URL}/integrations/oura/authorize`}
+                className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf"
+              >
+                Connect
+              </a>
+            )}
             <button
-              onClick={() => triggerGuarded("oura-sync", api.syncOura, "Oura sync")}
-              disabled={busyAction === "oura-sync"}
-              className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
+              onClick={
+                demoMode
+                  ? undefined
+                  : () => triggerGuarded("oura-sync", api.syncOura, "Oura sync")
+              }
+              disabled={demoMode || busyAction === "oura-sync"}
+              className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {busyAction === "oura-sync" ? "Syncing…" : "Sync now"}
             </button>
           </div>
+          {demoMode && <DemoUnavailable />}
         </div>
 
         <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
@@ -169,16 +188,18 @@ export default function SettingsPage() {
               ref={fileInputRef}
               type="file"
               accept=".zip"
-              className="text-xs text-clay min-w-0 file:mr-3 file:border-[0.5px] file:border-line file:rounded-full file:px-3 file:py-1.5 file:text-xs file:bg-white file:text-clay file:hover:bg-line/50"
+              disabled={demoMode}
+              className="text-xs text-clay min-w-0 disabled:cursor-not-allowed file:mr-3 file:border-[0.5px] file:border-line file:rounded-full file:px-3 file:py-1.5 file:text-xs file:bg-white file:text-clay file:hover:bg-line/50 disabled:opacity-60"
             />
             <button
-              onClick={uploadExport}
-              disabled={uploading}
-              className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf disabled:bg-leaf-soft disabled:text-leaf-deep/70"
+              onClick={demoMode ? undefined : uploadExport}
+              disabled={demoMode || uploading}
+              className="tap-target bg-leaf-deep text-white px-3.5 py-1.5 rounded-full text-xs hover:bg-leaf disabled:bg-leaf-soft disabled:text-leaf-deep/70 disabled:cursor-not-allowed"
             >
               {uploading ? "Uploading…" : "Upload"}
             </button>
           </div>
+          {demoMode && <DemoUnavailable />}
         </div>
 
         <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
@@ -187,17 +208,28 @@ export default function SettingsPage() {
             Backfill Open-Meteo conditions for runs that are missing weather.
           </p>
           <button
-            onClick={() =>
-              triggerGuarded("weather-backfill", api.backfillWeather, "Weather backfill")
+            onClick={
+              demoMode
+                ? undefined
+                : () =>
+                    triggerGuarded(
+                      "weather-backfill",
+                      api.backfillWeather,
+                      "Weather backfill"
+                    )
             }
-            disabled={busyAction === "weather-backfill"}
-            className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50"
+            disabled={demoMode || busyAction === "weather-backfill"}
+            className="tap-target border-[0.5px] border-line text-clay px-3.5 py-1.5 rounded-full text-xs hover:bg-line/50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {busyAction === "weather-backfill" ? "Backfilling…" : "Backfill weather"}
           </button>
+          {demoMode && <DemoUnavailable />}
         </div>
       </div>
 
+      {/* Never rendered in demo — there is nothing to import there */}
+      {!demoMode && (
+        <>
       <h2 className="text-[13px] font-medium text-ink mb-2 px-1">Import jobs</h2>
       {jobs === null ? (
         <div className="text-sand text-sm">Loading jobs…</div>
@@ -205,7 +237,7 @@ export default function SettingsPage() {
         <div className="text-sm text-sand">No imports yet.</div>
       ) : (
         <div className="space-y-1.5">
-          {jobs.map((job) => (
+          {(showAllJobs ? jobs : jobs.slice(0, 3)).map((job) => (
             <div
               key={job.id}
               className="bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
@@ -236,8 +268,23 @@ export default function SettingsPage() {
               )}
             </div>
           ))}
+          {jobs.length > 3 && !showAllJobs && (
+            <button
+              onClick={() => setShowAllJobs(true)}
+              className="tap-target text-[13px] font-medium text-leaf-deep px-1 py-1"
+            >
+              Show all ({jobs.length})
+            </button>
+          )}
         </div>
+      )}
+        </>
       )}
     </div>
   );
+}
+
+/** Muted per-card caption for demo mode. */
+function DemoUnavailable() {
+  return <p className="text-[11px] text-sand mt-2.5">Not available in demo</p>;
 }

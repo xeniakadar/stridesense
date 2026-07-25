@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
+import { useDemoMode } from "@/components/DemoProvider";
 import { api, ApiError } from "@/lib/api";
 import type { Run, RunType, RunUpdate } from "@/lib/types";
 
@@ -50,6 +51,8 @@ export default function EditRunPage({
   const [run, setRun] = useState<Run | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const demoMode = useDemoMode();
+  const [demoNotice, setDemoNotice] = useState(false);
 
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(FormSchema),
@@ -88,6 +91,12 @@ export default function EditRunPage({
       values.duration_hours * 3600 +
       values.duration_minutes * 60 +
       values.duration_seconds;
+
+    // Demo showcase: interactive form, but saves never reach the API
+    if (demoMode) {
+      setDemoNotice(true);
+      return;
+    }
 
     const payload: RunUpdate = {
       date: values.date,
@@ -209,6 +218,12 @@ export default function EditRunPage({
         {submitError && (
           <div className="p-3 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-900">
             {submitError}
+          </div>
+        )}
+
+        {demoNotice && (
+          <div className="p-3 bg-leaf-pale border-[0.5px] border-leaf-soft rounded-2xl text-sm text-leaf-deep">
+            This is a demo — runs can&apos;t be saved here
           </div>
         )}
 
