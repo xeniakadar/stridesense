@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 import { BottomNav } from "@/components/BottomNav";
@@ -8,6 +8,12 @@ import { NavBar } from "@/components/NavBar";
 export const metadata: Metadata = {
   title: "StrideSense",
   description: "Contextual running performance analysis",
+};
+
+// cover + safe-area insets: the UI extends under the iPhone notch and
+// home indicator, and the nav bars pad themselves clear of both
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

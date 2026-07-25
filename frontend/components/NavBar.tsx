@@ -4,8 +4,6 @@ import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { Logo } from "@/components/Logo";
-
 export function NavBar() {
   // On the homepage the bar floats transparent over the full-bleed hero
   // mesh and scrolls away with it; everywhere else it's the sticky
@@ -20,12 +18,10 @@ export function NavBar() {
           : "sticky top-0 z-20 bg-cream/90 backdrop-blur-sm"
       }
     >
-      <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="tap-target">
-          <Logo size={16} />
-        </Link>
-        {/* Demo chip intentionally hidden — visual noise next to the logo.
-            Settings and add-run stay visible in demo as a showcase; the
+      {/* No wordmark up top — the bar is just the actions, pushed clear
+          of the iPhone status bar / notch by the safe-area inset */}
+      <div className="max-w-md mx-auto px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-end">
+        {/* Settings and add-run stay visible in demo as a showcase; the
             pages themselves neutralize any state-changing action. */}
         <nav className="flex items-center gap-1.5">
           <Link
