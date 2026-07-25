@@ -75,7 +75,7 @@ export function VsSimilarRuns({ run }: { run: Run }) {
 
         {comparison && (
           <div className="glass-ai rounded-2xl p-3.5">
-            <p className="text-[11.5px] leading-relaxed text-leaf-deep">
+            <p className="text-[11.5px] leading-relaxed text-[#4A3A2E]">
               {interpret(comparison, run.run_type)}
             </p>
           </div>
@@ -386,11 +386,7 @@ function PaceLineChart({
       items={[
         { label: "This run", color: LEAF_BRIGHT, shape: "dot" },
         { label: "Comparable runs", color: LEAF_MID, shape: "dot" },
-        {
-          label: "Trend — higher is faster (pace axis is inverted)",
-          color: LEAF_SOFT,
-          dashed: true,
-        },
+        { label: "Trend", color: LEAF_SOFT, dashed: true },
       ]}
     />
     </>

@@ -274,14 +274,24 @@ body {
   display: none;
 }
 
-/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief) */
+/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief).
+   One treatment for every AI box: warm gold-into-pale-teal wash with a
+   warm brown header and dark warm body ink. */
 .glass-ai {
   background: linear-gradient(
     135deg,
-    rgba(95, 212, 190, 0.18),
-    rgba(255, 138, 107, 0.15)
+    rgba(255, 196, 107, 0.2),
+    rgba(95, 212, 190, 0.16)
   );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 0.5px solid rgba(255, 255, 255, 0.8);
+  border: 0.5px solid rgba(255, 255, 255, 0.9);
+}
+/* Text palette rides the box class so components don't repeat it —
+   these outrank the utility classes on the elements */
+.glass-ai h2 {
+  color: #8a5a3c;
+}
+.glass-ai .ai-text {
+  color: #4a3a2e;
 }
