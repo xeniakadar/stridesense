@@ -274,12 +274,14 @@ body {
   display: none;
 }
 
-/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief) */
+/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief).
+   Purplish lavender-to-rose tint distinguishes AI surfaces from the
+   teal data palette. */
 .glass-ai {
   background: linear-gradient(
     135deg,
-    rgba(95, 212, 190, 0.18),
-    rgba(255, 138, 107, 0.15)
+    rgba(183, 139, 232, 0.22),
+    rgba(255, 94, 126, 0.12)
   );
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
