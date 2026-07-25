@@ -9,7 +9,6 @@ import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { Confetti } from "@/components/Confetti";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
-import { Glass } from "@/components/Glass";
 import { ReadMore } from "@/components/ReadMore";
 import { Chip } from "@/components/ui";
 import { VsSimilarRuns } from "@/components/VsSimilarRuns";
@@ -326,17 +325,15 @@ function InsightSection({ runId }: { runId: string }) {
   };
 
   return (
-    <Glass variant="insight" className="p-4">
+    <section className="glass-ai rounded-2xl p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[20px] font-medium glass-header leading-snug">
-          Insight
-        </h2>
+        <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Insight</h2>
         {!loading && !demoMode && (
           <button
             onClick={handleRegenerate}
             disabled={regenerating}
             aria-label="Regenerate insight"
-            className="tap-target glass-header opacity-70 hover:opacity-100 disabled:opacity-50"
+            className="tap-target text-leaf-deep/70 hover:text-leaf-deep disabled:opacity-50"
           >
             <RefreshCw
               size={14}
@@ -353,7 +350,7 @@ function InsightSection({ runId }: { runId: string }) {
           <AiText text={insight} />
         </ReadMore>
       )}
-    </Glass>
+    </section>
   );
 }
 
