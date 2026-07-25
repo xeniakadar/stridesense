@@ -6,7 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import DailyBrief
+from app.models import DailyBrief, SleepRecord
+from app.models.enums import DataSource
 from app.services.daily_brief import (
     DAILY_BRIEF_MODEL,
     DailyBriefData,
@@ -214,6 +215,66 @@ async def test_invalidate_daily_briefs_deletes_matching_dates(
         select(DailyBrief.content).where(DailyBrief.user_id == isolated_user.id)
     )
     assert list(remaining.scalars().all()) == ["untouched"]
+
+
+# --- sleep grace window: newest record within 3 days, honestly labeled ---
+
+
+async def test_sleep_grace_window_uses_yesterdays_record(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        SleepRecord(
+            user_id=isolated_user.id,
+            date=date.today() - timedelta(days=1),
+            source=DataSource.OURA,
+            sleep_quality=68,
+            sleep_hours=6.4,
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(return_value="Steady enough.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+
+    assert res.status_code == 200
+    data = gen.await_args.args[0]
+    assert data.sleep_score == 68
+    assert data.sleep_hours == 6.4
+    assert data.sleep_age_days == 1
+    context = build_daily_context(data, date.today())
+    assert "the night before last" in context
+    assert "last night" not in context  # never sold as fresh
+
+
+async def test_sleep_older_than_grace_window_is_omitted(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    await client.post("/runs", json=_run_payload(date.today()))
+    session.add(
+        SleepRecord(
+            user_id=isolated_user.id,
+            date=date.today() - timedelta(days=4),
+            source=DataSource.OURA,
+            sleep_quality=88,
+            raw_payload={"daily_readiness": {"score": 90}},
+        )
+    )
+    await session.commit()
+
+    gen = AsyncMock(return_value="Load only.")
+    with patch("app.api.daily_brief.generate_daily_brief", new=gen):
+        res = await client.get("/daily-brief")
+
+    assert res.status_code == 200
+    data = gen.await_args.args[0]
+    assert data.sleep_score is None
+    assert data.readiness_score is None  # readiness follows the same record
+    context = build_daily_context(data, date.today())
+    assert "sleep" not in context.lower()
+    assert "Readiness" not in context
 
 
 # --- zone consistency: the brief never narrates a stale load zone ---
