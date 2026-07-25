@@ -1,7 +1,7 @@
 """Daily overview: a grounded 2-3 sentence morning brief.
 
 Same design as insights.py — the LLM narrates ONLY the structured context
-assembled here (sleep vs own average, readiness, current ACWR, days since
+assembled here (sleep vs own average, current ACWR, days since
 the last hard run). Sections for missing data are simply absent; the
 prompt describes and offers options, never prescribes.
 """
@@ -45,7 +45,6 @@ SLEEP_GRACE_DAYS = 2
 class DailyBriefData:
     sleep_score: int | None
     sleep_score_avg: float | None
-    readiness_score: int | None
     acwr: float | None
     zone: str | None
     days_since_hard_run: int | None
@@ -55,8 +54,7 @@ class DailyBriefData:
     def has_anything(self) -> bool:
         return any(
             v is not None
-            for v in (self.sleep_score, self.readiness_score, self.acwr,
-                      self.days_since_hard_run)
+            for v in (self.sleep_score, self.acwr, self.days_since_hard_run)
         )
 
 
@@ -131,11 +129,6 @@ async def gather_daily_data(
     sleep_score = last_night.sleep_quality if last_night else None
     sleep_hours = last_night.sleep_hours if last_night else None
     sleep_age_days = (today - last_night.date).days if last_night else None
-    readiness_score = None
-    if last_night and last_night.raw_payload:
-        readiness_score = last_night.raw_payload.get("daily_readiness", {}).get(
-            "score"
-        )
 
     avg_result = await session.execute(
         select(func.avg(SleepRecord.sleep_quality)).where(
@@ -158,7 +151,6 @@ async def gather_daily_data(
     return DailyBriefData(
         sleep_score=sleep_score,
         sleep_score_avg=sleep_score_avg,
-        readiness_score=readiness_score,
         acwr=acwr,
         zone=zone,
         days_since_hard_run=days_since_hard_run,
@@ -180,11 +172,6 @@ def build_daily_context(data: DailyBriefData, today: date_type) -> str:
             lines.append(f"- Duration: {data.sleep_hours} h")
         if data.sleep_score_avg is not None:
             lines.append(f"- This runner's own average: {data.sleep_score_avg}")
-
-    if data.readiness_score is not None:
-        age = SLEEP_AGE_LABELS.get(data.sleep_age_days or 0, "last night")
-        lines.append(f"\n## Readiness (Oura score, 0-100), from {age}")
-        lines.append(f"- Score: {data.readiness_score}")
 
     if data.acwr is not None:
         lines.append("\n## Training load")
