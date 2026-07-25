@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
+import { Glass } from "@/components/Glass";
 import { TertiaryLink } from "@/components/ui";
 import { api, ApiError } from "@/lib/api";
 import { formatDate, formatDistance, RUN_TYPE_LABELS } from "@/lib/format";
@@ -58,9 +59,11 @@ export function AskSection() {
   }
 
   return (
-    <div className="glass-ai rounded-2xl p-4">
+    <Glass variant="ask" className="p-4">
       <div className="mb-4">
-        <h2 className="text-[20px] font-medium text-leaf-deep leading-snug">Ask your history</h2>
+        <h2 className="text-[20px] font-medium glass-header leading-snug">
+          Ask your history
+        </h2>
         <p className="text-[13px] text-clay mt-0.5">
           {demoMode
             ? "In this demo, try one of these — free-form ask works in the full app"
@@ -152,6 +155,6 @@ export function AskSection() {
           </TertiaryLink>
         </div>
       )}
-    </div>
+    </Glass>
   );
 }

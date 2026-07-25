@@ -274,16 +274,55 @@ body {
   display: none;
 }
 
-/* Material 2 — glass: AI-generated content ONLY (insights, ask, brief).
-   Purplish lavender-to-rose tint distinguishes AI surfaces from the
-   teal data palette. */
-.glass-ai {
+/* Material 2 — glass: AI-generated surfaces ONLY. One base + named
+   semantic variants (see components/Glass.tsx); no component may carry
+   an ad-hoc glass gradient. Each variant defines its tint plus header/
+   body ink as custom properties consumed by .glass-header/.glass-body
+   and the AI text renderer. */
+.glass {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+}
+/* Daily overview + future daily surfaces — gold into teal */
+.glass-brief {
+  --glass-header: #8a5a3c;
+  --glass-body: #4a3a2e;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 196, 107, 0.2),
+    rgba(95, 212, 190, 0.16)
+  );
+}
+/* Run insight (and the similar-runs verdict) — violet into coral */
+.glass-insight {
+  --glass-header: #5c3a78;
+  --glass-body: #453058;
+  background: linear-gradient(
+    135deg,
+    rgba(183, 139, 232, 0.18),
+    rgba(255, 138, 107, 0.15)
+  );
+}
+/* Coach ask card + canned answers — migrated as-is: lavender into rose,
+   keeping its deep-green header/ink */
+.glass-ask {
+  --glass-header: #0c6653;
+  --glass-body: #4a2410;
   background: linear-gradient(
     135deg,
     rgba(183, 139, 232, 0.22),
     rgba(255, 94, 126, 0.12)
   );
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 0.5px solid rgba(255, 255, 255, 0.8);
+}
+.glass-header {
+  color: var(--glass-header);
+}
+.glass-body {
+  color: var(--glass-body);
+}
+/* AI body text inherits the variant ink automatically */
+.glass .ai-text {
+  color: var(--glass-body, #4a2410);
 }

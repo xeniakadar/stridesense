@@ -13,6 +13,7 @@ import {
 } from "recharts";
 
 import { ChartLegend } from "@/components/charts/ChartLegend";
+import { Glass } from "@/components/Glass";
 import { api } from "@/lib/api";
 import {
   AXIS,
@@ -74,11 +75,11 @@ export function VsSimilarRuns({ run }: { run: Run }) {
         {comparison && <DeltaCards comparison={comparison} />}
 
         {comparison && (
-          <div className="glass-ai rounded-2xl p-3.5">
-            <p className="text-[11.5px] leading-relaxed text-leaf-deep">
+          <Glass variant="insight" className="p-3.5">
+            <p className="text-[11.5px] leading-relaxed glass-body">
               {interpret(comparison, run.run_type)}
             </p>
-          </div>
+          </Glass>
         )}
 
         <div className="space-y-1.5">
