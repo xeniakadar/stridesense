@@ -51,7 +51,7 @@ export function VsSimilarRuns({ run }: { run: Run }) {
   return (
     <section id="vs-similar-runs" className="scroll-mt-20">
       <div className="px-1 mb-2 mt-1">
-        <p className="text-[13px] font-medium text-ink">vs similar runs</p>
+        <p className="text-[13px] font-medium text-ink">Similar runs</p>
         <p className="text-[11.5px] text-sand">
           compared with your {n} closest{" "}
           {similar.type_fallback ? "" : `${run.run_type} `}runs
