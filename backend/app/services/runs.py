@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Run
 from app.models.enums import DataSource, RunTypeSource
 from app.schemas.run import RunCreate, RunUpdate
+from app.services.daily_brief import invalidate_todays_brief
 from app.services.insights import invalidate_insights
 
 # Fields whose change makes a cached insight's narration stale.
@@ -45,6 +46,7 @@ async def create_run(
         **payload.model_dump(),
     )
     session.add(run)
+    await invalidate_todays_brief(session, user_id)
     await session.commit()
     await session.refresh(run)
     return run
@@ -103,6 +105,7 @@ async def update_run(
     if INSIGHT_RELEVANT_FIELDS & update_data.keys():
         await invalidate_insights(session, run.id)
 
+    await invalidate_todays_brief(session, user_id)
     await session.commit()
     await session.refresh(run)
     return run
@@ -112,4 +115,5 @@ async def delete_run(session: AsyncSession, user_id: UUID, run_id: UUID) -> None
     """Delete a run. Raises if not found."""
     run = await get_run(session, user_id, run_id)
     await session.delete(run)
+    await invalidate_todays_brief(session, user_id)
     await session.commit()

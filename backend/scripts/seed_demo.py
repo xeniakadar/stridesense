@@ -56,6 +56,7 @@ from app.models import (
     GlucoseDailyRecord,
     Run,
     RunGlucoseSample,
+    SleepRecord,
     User,
 )
 from app.models.enums import DataSource, RunType, RunTypeSource
@@ -372,9 +373,63 @@ def _plan_week(monday: date, start: date, end: date) -> list[tuple[date, RunType
     return [(d, t) for d, t in plan if start <= d <= end]
 
 
+SLEEP_SCORE_MEAN = 75.0
+SLEEP_SCORE_STD = 6.0
+BAD_NIGHT_PROB = 0.05
+
+
+def _generate_sleep_records(
+    user_id: UUID, runs: list[Run], start: date, end: date
+) -> list[SleepRecord]:
+    """One synthetic night per day across the timeline. Scores hover
+    around this runner's own average (~75) with realistic variance; the
+    night AFTER a long run or race dips 10-20 (dated the following
+    morning, matching the model's convention); occasional standalone bad
+    nights land regardless. Purely RNG-driven, so deterministic under
+    generate_dataset's fixed seed."""
+    heavy_days = {
+        r.date for r in runs if r.run_type in (RunType.LONG, RunType.RACE)
+    }
+    records: list[SleepRecord] = []
+    for i in range((end - start).days + 1):
+        d = start + timedelta(days=i)
+        score = random.gauss(SLEEP_SCORE_MEAN, SLEEP_SCORE_STD)
+        hours = random.gauss(7.3, 0.6)
+        if (d - timedelta(days=1)) in heavy_days:
+            score -= random.uniform(10, 20)
+            hours -= random.uniform(0.3, 0.9)
+        elif random.random() < BAD_NIGHT_PROB:
+            score -= random.uniform(12, 22)
+            hours -= random.uniform(0.7, 1.5)
+        score_int = round(max(40.0, min(95.0, score)))
+        hours = max(4.5, min(9.5, hours))
+        readiness = round(max(35.0, min(95.0, score_int + random.uniform(-8, 8))))
+        records.append(
+            SleepRecord(
+                user_id=user_id,
+                date=d,
+                source=DataSource.MANUAL,  # synthetic, not device data
+                sleep_hours=round(hours, 2),
+                sleep_quality=score_int,
+                deep_sleep_hours=round(hours * random.uniform(0.15, 0.22), 2),
+                rem_sleep_hours=round(hours * random.uniform(0.18, 0.26), 2),
+                resting_hr=round(random.gauss(52, 3)),
+                hrv=round(random.gauss(65, 12), 1),
+                # The daily-brief context builder reads readiness from here
+                raw_payload={"daily_readiness": {"score": readiness}},
+            )
+        )
+    return records
+
+
 def generate_dataset(
     user_id: UUID, start: date = DEMO_START, end: date | None = None
-) -> tuple[list[Run], list[RunGlucoseSample], list[GlucoseDailyRecord]]:
+) -> tuple[
+    list[Run],
+    list[RunGlucoseSample],
+    list[GlucoseDailyRecord],
+    list[SleepRecord],
+]:
     """The full deterministic dataset, in memory. Seeding the RNG from the
     fixed constant (plus user id, so concurrent test users get distinct
     generated PKs) makes two calls byte-identical."""
@@ -418,7 +473,11 @@ def generate_dataset(
             sample.source = DataSource.MANUAL  # synthetic, not device data
         samples.extend(run_samples)
 
-    return runs, samples, daily_records
+    # After everything else so the extra RNG draws don't disturb the
+    # sequences the runs/glucose generation consumes
+    sleep = _generate_sleep_records(user_id, runs, start, end)
+
+    return runs, samples, daily_records, sleep
 
 
 async def load_demo_data(session: AsyncSession, user_id: UUID) -> dict[str, int]:
@@ -430,21 +489,30 @@ async def load_demo_data(session: AsyncSession, user_id: UUID) -> dict[str, int]
     )
     # Stale briefs would narrate the wiped dataset
     await session.execute(delete(DailyBrief).where(DailyBrief.user_id == user_id))
+    # Only the synthetic (manual) sleep — never device-imported nights
+    await session.execute(
+        delete(SleepRecord).where(
+            SleepRecord.user_id == user_id,
+            SleepRecord.source == DataSource.MANUAL,
+        )
+    )
     # Cascades to run_glucose_samples and insights via FKs
     await session.execute(delete(Run).where(Run.user_id == user_id))
 
-    runs, samples, daily_records = generate_dataset(user_id)
+    runs, samples, daily_records, sleep = generate_dataset(user_id)
 
     session.add_all(runs)
     await session.flush()
     session.add_all(samples)
     session.add_all(daily_records)
+    session.add_all(sleep)
     await session.commit()
 
     return {
         "runs": len(runs),
         "glucose_samples": len(samples),
         "daily_records": len(daily_records),
+        "sleep_records": len(sleep),
     }
 
 

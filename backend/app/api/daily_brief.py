@@ -25,6 +25,7 @@ async def get_daily_brief(
     user_id: UUID = Depends(get_current_user_id),
 ) -> DailyBriefRead:
     today = date.today()
+    demo = get_settings().demo_mode
 
     cached = await session.execute(
         select(DailyBrief).where(
@@ -32,10 +33,20 @@ async def get_daily_brief(
         )
     )
     row = cached.scalar_one_or_none()
-    if row:
-        return DailyBriefRead.model_validate(row)
 
-    if get_settings().demo_mode:
+    data = None
+    if row:
+        if demo:
+            # Demo never regenerates — serve what pregeneration wrote
+            return DailyBriefRead.model_validate(row)
+        # The brief must never state a different load zone than
+        # /training-load returns at the same moment: a cached brief whose
+        # generation-time zone no longer matches is stale — regenerate.
+        data = await gather_daily_data(session, user_id, today)
+        if data.zone == row.acwr_zone:
+            return DailyBriefRead.model_validate(row)
+
+    if demo:
         # Demo never generates live. Serve the newest pre-generated brief
         # (scripts/pregenerate_insights.py writes one at deploy time) even
         # if its date has slipped, else a friendly placeholder.
@@ -57,7 +68,8 @@ async def get_daily_brief(
             created_at=datetime.now(UTC),
         )
 
-    data = await gather_daily_data(session, user_id, today)
+    if data is None:
+        data = await gather_daily_data(session, user_id, today)
     if not data.has_anything():
         # Nothing to narrate — don't call the LLM, don't cache
         return DailyBriefRead(
@@ -77,10 +89,21 @@ async def get_daily_brief(
             status_code=503, detail="Daily overview temporarily unavailable"
         ) from e
 
-    brief = DailyBrief(
-        user_id=user_id, date=today, content=content, model=DAILY_BRIEF_MODEL
-    )
-    session.add(brief)
+    if row is not None:
+        # Zone-stale row: replace in place (unique on user+date)
+        row.content = content
+        row.model = DAILY_BRIEF_MODEL
+        row.acwr_zone = data.zone
+        brief = row
+    else:
+        brief = DailyBrief(
+            user_id=user_id,
+            date=today,
+            content=content,
+            model=DAILY_BRIEF_MODEL,
+            acwr_zone=data.zone,
+        )
+        session.add(brief)
     await session.commit()
     await session.refresh(brief)
     return DailyBriefRead.model_validate(brief)

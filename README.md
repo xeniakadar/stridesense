@@ -52,6 +52,14 @@ captions glucose as simulated. (`scripts/export_demo_block.py` still exists
 for exporting a privacy-scrubbed block of real runs, but is no longer part
 of the demo path.)
 
+Note: the AI-output format (single-bold emphasis rules in the brief,
+insight, and ask prompts) and the demo data (synthetic nightly
+sleep_records feeding the daily brief) both changed in July 2026. The
+deploy pipeline's seed → embed → pregenerate sequence above regenerates
+everything correctly on its own. Locally, reseed and re-pregenerate
+(`seed_demo`, then `pregenerate_insights` / `pregenerate_ask_answers`)
+to see briefs, insights, and answers in the new format with sleep data.
+
 ## Repo layout
 
 ```

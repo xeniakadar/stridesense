@@ -27,6 +27,9 @@ class DailyBrief(Base):
     date: Mapped[date_type] = mapped_column(nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     model: Mapped[str] = mapped_column(String(60), nullable=False)
+    # ACWR zone at generation time — on read, a live zone that differs
+    # means the cached text may narrate stale load: regenerate.
+    acwr_zone: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

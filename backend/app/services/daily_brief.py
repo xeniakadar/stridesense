@@ -69,6 +69,13 @@ async def invalidate_daily_briefs(
     )
 
 
+async def invalidate_todays_brief(session: AsyncSession, user_id: UUID) -> None:
+    """Runs move today's load zone — call whenever a run is created,
+    imported, updated, or deleted, so a cached brief can't keep narrating
+    a zone /training-load no longer reports. Doesn't commit."""
+    await invalidate_daily_briefs(session, user_id, [date_type.today()])
+
+
 def _current_load_point(
     runs: list[Run], today: date_type
 ) -> tuple[float | None, str | None]:
@@ -180,10 +187,9 @@ a short morning overview of how a runner comes into the day. Rules:
 - You are not a doctor: no medical advice, no diagnoses.
 - Permissive, low-pressure tone (e.g. "an easy day would cost you nothing").
 - Plain language, no jargon dumps.
-- Structure the output exactly like this, and never as one long block: \
-first line a one-sentence verdict, entirely bolded with **...** — how the \
-runner comes into today; then at most 2 more short sentences of support. \
-No headers, no other markdown beyond that bolding.
+- 2-4 sentences. Markdown bold is allowed for AT MOST ONE short key \
+phrase — the single most important takeaway. No headers, no lists, no \
+other markdown.
 """
 
 
