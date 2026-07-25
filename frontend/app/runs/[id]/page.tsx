@@ -9,7 +9,8 @@ import { AiText } from "@/components/AiText";
 import { useDemoMode } from "@/components/DemoProvider";
 import { Confetti } from "@/components/Confetti";
 import { GlucoseCurveChart } from "@/components/charts/GlucoseCurveChart";
-import { Chip, TertiaryLink } from "@/components/ui";
+import { Chip } from "@/components/ui";
+import { VsSimilarRuns } from "@/components/VsSimilarRuns";
 import { api, ApiError } from "@/lib/api";
 import {
   cityFromCoords,
@@ -21,7 +22,7 @@ import {
   formatTimeInRange,
   RUN_TYPE_LABELS,
 } from "@/lib/format";
-import type { Run, SimilarRun } from "@/lib/types";
+import type { Run } from "@/lib/types";
 
 export default function RunDetailPage() {
   const params = useParams<{ id: string }>();
@@ -177,7 +178,7 @@ export default function RunDetailPage() {
         </Card>
       )}
 
-      <SimilarRunsSection runId={run.id} />
+      <VsSimilarRuns run={run} />
 
       {hasWeather && (
         <Card>
@@ -348,40 +349,3 @@ function InsightSection({ runId }: { runId: string }) {
   );
 }
 
-function SimilarRunsSection({ runId }: { runId: string }) {
-  const [runs, setRuns] = useState<SimilarRun[]>([]);
-  useEffect(() => {
-    api
-      .getSimilarRuns(runId)
-      .then((res) => setRuns(res.runs))
-      .catch(() => setRuns([]));
-  }, [runId]);
-
-  if (runs.length === 0) return null;
-
-  return (
-    <section>
-      <div className="flex justify-between items-baseline mb-2 mt-1 px-1">
-        <p className="text-[13px] font-medium text-ink">Comparable runs</p>
-        <TertiaryLink href={`/runs/${runId}/compare`}>Compare</TertiaryLink>
-      </div>
-      <div className="space-y-1.5">
-        {runs.map((r) => (
-          <Link
-            key={r.run_id}
-            href={`/runs/${r.run_id}`}
-            className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
-          >
-            <span className="text-[15px] text-ink">
-              {formatDate(r.date)} · {RUN_TYPE_LABELS[r.run_type]} ·{" "}
-              {formatDistance(r.distance_km)}
-            </span>
-            <span className="text-[11px] font-medium text-leaf-deep">
-              {Math.round(r.score * 100)}% match
-            </span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}

@@ -1,8 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   CartesianGrid,
@@ -15,7 +13,7 @@ import {
 } from "recharts";
 
 import { ChartLegend } from "@/components/charts/ChartLegend";
-import { api, ApiError } from "@/lib/api";
+import { api } from "@/lib/api";
 import {
   AXIS,
   LEAF_BRIGHT,
@@ -25,60 +23,36 @@ import {
   TOOLTIP_STYLE,
 } from "@/lib/colors";
 import {
-  cityFromCoords,
   formatDate,
-  formatDistance,
+  formatDateShort,
   formatMonthYear,
   formatPace,
 } from "@/lib/format";
 import type { Comparison, Run, SimilarRunsResponse } from "@/lib/types";
 
-export default function CompareRunPage() {
-  const params = useParams<{ id: string }>();
-  const [run, setRun] = useState<Run | null>(null);
+/** The former /runs/[id]/compare screen, folded into the detail page:
+ * header + honest pool line, pace-over-time scatter, delta cards, the
+ * deterministic verdict, and a compact linked list of the comparables. */
+export function VsSimilarRuns({ run }: { run: Run }) {
   const [similar, setSimilar] = useState<SimilarRunsResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
-      .getRun(params.id)
-      .then(setRun)
-      .catch((e) =>
-        setError(e instanceof ApiError ? e.message : "Could not load run.")
-      );
-    api
-      .getSimilarRuns(params.id)
+      .getSimilarRuns(run.id)
       .then(setSimilar)
       .catch(() => setSimilar(null));
-  }, [params.id]);
+  }, [run.id]);
 
-  if (error) return <p className="text-sm text-red-700">{error}</p>;
-  if (!run || !similar) return <p className="text-sm text-sand">Loading…</p>;
+  if (!similar || similar.runs.length === 0) return null;
 
-  const city = cityFromCoords(run.start_lat, run.start_lng);
   const n = similar.runs.length;
   const comparison = similar.comparison;
 
   return (
-    <div className="space-y-3">
-      {/* Small gradient header — the screen's single gradient surface */}
-      <div className="gradient-drilldown rounded-3xl px-5 pt-4 pb-4">
-        <div className="flex items-center justify-between">
-          <Link
-            href={`/runs/${run.id}`}
-            aria-label="Back to run"
-            className="tap-target text-clay-hero"
-          >
-            <ArrowLeft size={18} strokeWidth={1.75} />
-          </Link>
-          <p className="text-[13px] font-medium text-ink">Similar runs</p>
-          <span className="w-[18px]" />
-        </div>
-        <p className="mt-2.5 text-xs text-clay-hero">
-          {formatDate(run.date)} · {run.run_type} · {formatDistance(run.distance_km)}
-          {city ? ` · ${city}` : ""}
-        </p>
-        <p className="mt-0.5 text-[11.5px] text-clay-hero">
+    <section id="vs-similar-runs" className="scroll-mt-20">
+      <div className="px-1 mb-2 mt-1">
+        <p className="text-[13px] font-medium text-ink">vs similar runs</p>
+        <p className="text-[11.5px] text-sand">
           compared with your {n} closest{" "}
           {similar.type_fallback ? "" : `${run.run_type} `}runs
           {similar.type_fallback
@@ -87,61 +61,52 @@ export default function CompareRunPage() {
               ? ` — small sample (${similar.pool_size} candidates)`
               : ""}
         </p>
-        <p className="mt-0.5 text-[11.5px] text-clay-hero">
-          match % weighs distance, pace, heart rate, effort, and conditions
-        </p>
       </div>
 
-      {n === 0 ? (
-        <p className="text-sm text-sand px-1">
-          No comparable runs yet — log a few more and come back.
-        </p>
-      ) : (
-        <>
-          {comparison && <DeltaCards comparison={comparison} />}
+      <div className="space-y-3">
+        <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
+          <p className="text-[13px] font-medium text-ink mb-2.5">
+            Pace over time, this run highlighted
+          </p>
+          <PaceLineChart run={run} similar={similar} />
+        </div>
 
-          {comparison && (
-            <div className="glass-ai rounded-2xl p-3.5">
-              <p className="text-[11.5px] leading-relaxed text-leaf-deep">
-                {interpret(comparison, run.run_type)}
-              </p>
-            </div>
-          )}
+        {comparison && <DeltaCards comparison={comparison} />}
 
-          <div className="bg-white border-[0.5px] border-line rounded-2xl p-4">
-            <p className="text-[20px] font-medium text-ink mb-2.5 leading-snug">
-              Pace over time, this run highlighted
+        {comparison && (
+          <div className="glass-ai rounded-2xl p-3.5">
+            <p className="text-[11.5px] leading-relaxed text-leaf-deep">
+              {interpret(comparison, run.run_type)}
             </p>
-            <PaceLineChart run={run} similar={similar} />
           </div>
+        )}
 
-          <section>
-            <p className="text-[14px] font-medium text-ink mb-2 px-1">
-              The {n} comparable{n === 1 ? "" : "s"}
-            </p>
-            <div className="space-y-1.5">
-              {similar.runs.map((s) => (
-                <Link
-                  key={s.run_id}
-                  href={`/runs/${s.run_id}`}
-                  className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
-                >
-                  <span className="text-[15px] text-ink">
-                    {formatDate(s.date)} · {formatDistance(s.distance_km)}
-                    {s.weather_temp_start_c !== null
-                      ? ` · ${Math.round(s.weather_temp_start_c)}°C`
-                      : ""}
-                  </span>
-                  <span className="text-[11px] font-medium text-leaf-deep">
-                    {Math.round(s.score * 100)}% match
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        </>
-      )}
-    </div>
+        <div className="space-y-1.5">
+          {similar.runs.map((s) => (
+            <Link
+              key={s.run_id}
+              href={`/runs/${s.run_id}`}
+              className="flex justify-between items-center bg-white border-[0.5px] border-line rounded-2xl px-3.5 py-2.5"
+            >
+              {/* Fields the endpoint doesn't have (e.g. HR) just don't
+                  render — no dashes, no placeholders */}
+              <span className="text-[13.5px] text-ink">
+                {formatDateShort(s.date)}
+                {s.avg_pace_seconds_per_km
+                  ? ` · ${formatPace(s.avg_pace_seconds_per_km)}`
+                  : ""}
+                {s.weather_temp_start_c !== null
+                  ? ` · ${Math.round(s.weather_temp_start_c)}°C`
+                  : ""}
+              </span>
+              <span className="text-[11px] text-sand shrink-0 ml-3">
+                {Math.round(s.score * 100)}%
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -204,7 +169,8 @@ function DeltaCards({ comparison }: { comparison: Comparison }) {
   if (cards.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    // 2×2 on narrow screens (no orphan row), one row when there's room
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       {cards.map((c) => (
         <div
           key={c.key}
@@ -263,9 +229,7 @@ function interpret(comparison: Comparison, runType: string): string {
 }
 
 /** Per-point dot renderer that makes the compared run unmissable: filled,
- * larger, and labeled — the comparables stay small open circles. (The old
- * ReferenceDot overlay drew an identical open circle over the target and
- * left it indistinguishable.) */
+ * larger, and labeled — the comparables stay small open circles. */
 function RunDot(props: {
   firstTs: number;
   lastTs: number;
@@ -317,8 +281,8 @@ function RunDot(props: {
 }
 
 /** Pace by date across the comparables and this run — one connected line
- * (it's all the same runner over time), with this run's point emphasized
- * in solid leaf. Y axis is reversed so faster sits higher. */
+ * (it's all the same runner over time), with this run's point emphasized.
+ * Y axis is reversed so faster sits higher. */
 function PaceLineChart({
   run,
   similar,
@@ -422,7 +386,11 @@ function PaceLineChart({
       items={[
         { label: "This run", color: LEAF_BRIGHT, shape: "dot" },
         { label: "Comparable runs", color: LEAF_MID, shape: "dot" },
-        { label: "Trend — higher is faster (pace axis is inverted)", color: LEAF_SOFT, dashed: true },
+        {
+          label: "Trend — higher is faster (pace axis is inverted)",
+          color: LEAF_SOFT,
+          dashed: true,
+        },
       ]}
     />
     </>
