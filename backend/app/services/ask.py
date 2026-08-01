@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.models import Run
+from app.models.enums import RunType
 from app.services.cities import city_for_run
 from app.services.insights import InsightUnavailableError
 
@@ -56,10 +57,35 @@ def sentence_hash(text: str) -> str:
     """
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+# (low, high, label) — the distance classes people actually ask about
+# ("my marathon", "my 10k"). Retrieval can't match those words unless
+# the sentence contains them.
+RACE_DISTANCE_CLASSES: list[tuple[float, float, str]] = [
+    (42.0, float("inf"), "marathon-distance race"),
+    (21.0, 21.3, "half-marathon-distance race"),
+    (9.5, 10.5, "10k-distance race"),
+    (4.8, 5.4, "5k-distance race"),
+]
+
+
+def _race_distance_class(km: float) -> str | None:
+    for low, high, label in RACE_DISTANCE_CLASSES:
+        if low <= km <= high:
+            return label
+    return None
+
+
 def run_to_text(run: Run) -> str:
     """Render one run as one retrieval-friendly sentence."""
     parts = []
-    if run.run_type.value != "other":
+    race_class = (
+        _race_distance_class(run.distance_km)
+        if run.run_type == RunType.RACE
+        else None
+    )
+    if race_class is not None:
+        parts.append(f"{race_class}, {run.distance_km} km")
+    elif run.run_type.value != "other":
       parts.append(f"{run.run_type.value} run, {run.distance_km} km")
     else:
       parts.append(f"run of {run.distance_km} km")

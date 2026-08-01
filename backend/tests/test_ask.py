@@ -177,3 +177,25 @@ async def test_ask_endpoint_demo_mode_returns_403(
     assert res.status_code == 403
     assert "demo" in res.json()["detail"].lower()
     assert mock_retrieve.await_count == 0
+
+
+# --- run_to_text: race distance classes ---
+
+
+def test_run_to_text_marathon_distance_class() -> None:
+    from app.models.enums import RunType
+    from app.services.ask import run_to_text
+
+    run = Run(
+        run_type=RunType.RACE,
+        distance_km=42.2,
+        duration_seconds=19500,
+        date=date(2025, 10, 12),
+    )
+    text = run_to_text(run)
+    assert "marathon-distance race" in text
+
+    # Non-race runs are unchanged — no distance-class wording
+    easy = Run(run_type=RunType.EASY, distance_km=42.2, duration_seconds=19500)
+    assert "marathon" not in run_to_text(easy)
+    assert "easy run, 42.2 km" in run_to_text(easy)

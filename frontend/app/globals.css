@@ -363,3 +363,56 @@ body {
     height: min(844px, 90vh);
   }
 }
+
+/* Coach chat screen: a fixed-height column — the transcript scrolls
+   between the header and the composer, which sits in normal flow above
+   the bottom nav (no position:fixed anywhere in this chain). */
+.coach-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* 100dvh minus the fixed chrome: top bar (~57px) + main's top padding
+     (8px) + bottom nav (~56px) + both safe-area insets */
+  height: calc(
+    100dvh - 121px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+  );
+}
+main:has(.coach-page) {
+  /* The column already ends at the nav — no clearance padding */
+  padding-bottom: 0;
+}
+@media (min-width: 900px) {
+  /* Inside the device frame the screen area is already nav-less: size
+     via the flex chain instead of viewport math */
+  .phone-screen:has(.coach-page) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  main:has(.coach-page) {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .coach-page {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Coach typing indicator */
+.typing-dot {
+  animation: typing-blink 1.2s infinite both;
+}
+@keyframes typing-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
