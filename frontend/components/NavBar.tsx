@@ -27,8 +27,10 @@ export function NavBar() {
           by the safe-area inset */}
       <div className="max-w-md mx-auto px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between">
         <span>
-          {/* Deployed-demo marker only — never renders on a real install */}
-          {demoMode && (
+          {/* Deployed-demo marker only — never renders on a real install.
+              On home the hero's greeting row carries it instead, so the
+              overlaid bar must not double (and overlap) it. */}
+          {demoMode && !onHome && (
             <Chip
               tone="custom"
               className="bg-amber-50 text-amber-800 border border-amber-200"
