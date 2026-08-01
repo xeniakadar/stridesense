@@ -79,7 +79,20 @@ export default function DashboardPage() {
         {/* Stacked hero (option A): greeting sits level with the nav-bar
             actions; the metric carries its meta inline; one full-width
             strip unifies the recommendation with the load status */}
-        <p className="text-[13px] text-clay-hero">Hi Xenia</p>
+        {/* Greeting + demo badge share one flex row (the NavBar overlay
+            skips the badge on home). pr clears the overlaid gear/plus;
+            the greeting truncates first — the badge never shrinks. */}
+        <div className="flex items-center gap-2 min-w-0 pr-20">
+          <p className="truncate text-[13px] text-clay-hero">Hi Xenia</p>
+          {demoMode && (
+            <Chip
+              tone="custom"
+              className="shrink-0 bg-amber-50 text-amber-800 border border-amber-200"
+            >
+              Demo
+            </Chip>
+          )}
+        </div>
         <p className="mt-3 text-5xl font-medium text-ink leading-none">
           {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}{" "}
           <span className="text-sm font-normal text-clay-hero">
