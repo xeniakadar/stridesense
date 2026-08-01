@@ -22,7 +22,9 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="fixed bottom-0 inset-x-0 z-20 border-t-[0.5px] border-line bg-white/90 backdrop-blur-sm"
+      // Viewport-fixed ONLY below the desktop shell breakpoint; inside
+      // the frame (>=900px) it's a plain flex child pinned by geometry
+      className="max-[899px]:fixed bottom-0 inset-x-0 z-20 border-t-[0.5px] border-line bg-white/90 backdrop-blur-sm"
     >
       <div className="max-w-md mx-auto flex justify-around px-2 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {TABS.map(({ href, label, icon: Icon }) => (

@@ -296,16 +296,13 @@ body {
   color: #4a3a2e;
 }
 
-/* Desktop presentation shell. Below 900px all three wrappers are inert
-   (display: contents) and the app renders full-bleed exactly as on a
-   phone; above it, the app sits in a self-contained device frame beside
-   the lockup. Pure chrome — the app's own components are untouched.
-
-   Structure: .phone-frame clips (overflow hidden, rounded corners);
-   .phone-screen inside it is the scroll region. The app's bottom nav is
-   flipped from fixed to sticky within the screen, so it pins to the
-   frame's bottom edge while content scrolls under it. The page itself
-   never scrolls on desktop. */
+/* Desktop presentation shell. Below 900px all wrappers are inert
+   (display: contents), the nav is viewport-fixed (its max-[899px]:fixed
+   utility), and the page scrolls — exactly today's mobile behavior.
+   From 900px the app sits in a fixed-height device frame: a flex column
+   whose only children are the scrollable screen (flex:1) and the nav
+   (flex-shrink:0, plain flow — never position:fixed on desktop). The
+   page body does not scroll; the screen does. */
 .shell,
 .phone-frame,
 .phone-screen {
@@ -317,30 +314,27 @@ body {
 @media (min-width: 900px) {
   body {
     background: #f1eadf;
-    overflow: hidden; /* scrolling happens inside the frame only */
+    overflow: hidden; /* the frame is the only scroll region */
   }
   .shell {
     display: flex;
     flex-direction: column; /* lockup stacks above on narrower desktops */
     align-items: center;
     justify-content: center;
-    gap: 2rem;
+    gap: 1.5rem;
     height: 100vh;
-    padding: 2.5rem 1.5rem;
+    padding: 1.5rem;
   }
   .shell-aside {
     display: block;
   }
   .phone-frame {
-    /* Fixed-height flex column: screen (flex:1, scrolls) above the nav
-       (flex child, never shrinks) — the nav sits at the frame's bottom
-       on every page, regardless of content height */
     display: flex;
     flex-direction: column;
     position: relative;
     width: 390px;
-    /* Stacked mode leaves room for the lockup + gaps above the frame */
-    height: min(844px, calc(100vh - 11rem));
+    /* Room for the stacked lockup; ≥1150px (row layout) uses full 90vh */
+    height: min(844px, calc(90vh - 4rem));
     overflow: hidden; /* rounded corners clip the scrolling content */
     border-radius: 40px;
     border: 1px solid #e6ddcf;
@@ -349,9 +343,9 @@ body {
   }
   .phone-screen {
     display: block;
-    position: relative; /* home top bar anchors here and scrolls away */
+    position: relative; /* home top bar anchors here, scrolls with content */
     flex: 1;
-    min-height: 0;
+    min-height: 0; /* required — flex children refuse to shrink without it */
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -359,16 +353,11 @@ body {
   .phone-screen::-webkit-scrollbar {
     display: none;
   }
-  /* The app's bottom nav: viewport-fixed on phones, plain flex child
-     inside the frame on desktop */
-  .phone-frame > nav[aria-label="Primary"] {
-    position: static;
-    flex-shrink: 0;
-  }
 }
 @media (min-width: 1150px) {
   .shell {
     flex-direction: row; /* lockup moves left of the frame */
+    gap: 2rem;
   }
   .phone-frame {
     height: min(844px, 90vh);
