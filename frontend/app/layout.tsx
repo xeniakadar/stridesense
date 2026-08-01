@@ -31,13 +31,18 @@ export default function RootLayout({
               phone frame with an info column. Styles live in globals.css. */}
           <div className="shell">
             <PresentationAside />
+            {/* Outer frame clips to the rounded corners; the inner screen
+                is the scroll region, so the bottom nav can stick to the
+                frame's bottom edge on desktop */}
             <div className="phone-frame">
-              <NavBar />
-              {/* Mobile-first: one centered column, desktop gets the same */}
-              <main className="max-w-md mx-auto px-4 pt-2 pb-28">
-                {children}
-              </main>
-              <BottomNav />
+              <div className="phone-screen">
+                <NavBar />
+                {/* Mobile-first: one centered column, desktop gets the same */}
+                <main className="max-w-md mx-auto px-4 pt-2 pb-28">
+                  {children}
+                </main>
+                <BottomNav />
+              </div>
             </div>
           </div>
         </DemoProvider>
