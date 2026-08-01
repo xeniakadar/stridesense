@@ -298,8 +298,8 @@ body {
 
 /* Desktop presentation shell. Below 900px both wrappers are inert
    (display: contents) and the app renders full-bleed exactly as on a
-   phone; above it, the app sits in a device frame beside an info
-   column. Pure chrome — the app's own components are untouched. */
+   phone; above it, the app sits in a device frame beside the lockup.
+   Pure chrome — the app's own components are untouched. */
 .shell,
 .phone-frame {
   display: contents;
@@ -313,7 +313,7 @@ body {
   }
   .shell {
     display: flex;
-    flex-direction: column; /* aside stacks above on narrower desktops */
+    flex-direction: column; /* lockup stacks above on narrower desktops */
     align-items: center;
     justify-content: center;
     gap: 2rem;
@@ -345,9 +345,6 @@ body {
 }
 @media (min-width: 1150px) {
   .shell {
-    flex-direction: row; /* info column moves left of the frame */
-  }
-  .shell-aside {
-    max-width: 260px;
+    flex-direction: row; /* lockup moves left of the frame */
   }
 }
