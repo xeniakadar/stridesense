@@ -117,7 +117,7 @@ export function CoachChat() {
           <CoachBubble>
             <p className="text-sm leading-relaxed text-ink">
               {demoMode
-                ? "Ask me about this runner's history — try one of the questions below."
+                ? "Ask me anything about your runs! I'll look across your history to help you understand what's working and what might be holding you back."
                 : "Ask me anything about your runs — or start with a suggestion."}
             </p>
           </CoachBubble>
