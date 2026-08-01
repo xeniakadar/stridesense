@@ -31,9 +31,10 @@ export default function RootLayout({
               phone frame with an info column. Styles live in globals.css. */}
           <div className="shell">
             <PresentationAside />
-            {/* Outer frame clips to the rounded corners; the inner screen
-                is the scroll region, so the bottom nav can stick to the
-                frame's bottom edge on desktop */}
+            {/* On desktop the frame is a fixed-height flex column: the
+                screen is the flex:1 scroll region and the bottom nav is
+                its non-shrinking sibling — pinned to the frame's bottom
+                on every page, however short the content */}
             <div className="phone-frame">
               <div className="phone-screen">
                 <NavBar />
@@ -41,8 +42,8 @@ export default function RootLayout({
                 <main className="max-w-md mx-auto px-4 pt-2 pb-28">
                   {children}
                 </main>
-                <BottomNav />
               </div>
+              <BottomNav />
             </div>
           </div>
         </DemoProvider>

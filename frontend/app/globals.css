@@ -332,7 +332,11 @@ body {
     display: block;
   }
   .phone-frame {
-    display: block;
+    /* Fixed-height flex column: screen (flex:1, scrolls) above the nav
+       (flex child, never shrinks) — the nav sits at the frame's bottom
+       on every page, regardless of content height */
+    display: flex;
+    flex-direction: column;
     position: relative;
     width: 390px;
     /* Stacked mode leaves room for the lockup + gaps above the frame */
@@ -346,7 +350,8 @@ body {
   .phone-screen {
     display: block;
     position: relative; /* home top bar anchors here and scrolls away */
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: none;
@@ -354,11 +359,11 @@ body {
   .phone-screen::-webkit-scrollbar {
     display: none;
   }
-  /* The app's bottom nav: fixed → sticky inside the frame. It is the
-     screen's last child, so sticky bottom pins it to the frame edge
-     while the content scrolls underneath. */
-  .phone-screen nav[aria-label="Primary"] {
-    position: sticky;
+  /* The app's bottom nav: viewport-fixed on phones, plain flex child
+     inside the frame on desktop */
+  .phone-frame > nav[aria-label="Primary"] {
+    position: static;
+    flex-shrink: 0;
   }
 }
 @media (min-width: 1150px) {
