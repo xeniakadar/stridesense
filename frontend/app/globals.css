@@ -295,3 +295,71 @@ body {
 .glass-ai .ai-text {
   color: #4a3a2e;
 }
+
+/* Desktop presentation shell. Below 900px all wrappers are inert
+   (display: contents), the nav is viewport-fixed (its max-[899px]:fixed
+   utility), and the page scrolls — exactly today's mobile behavior.
+   From 900px the app sits in a fixed-height device frame: a flex column
+   whose only children are the scrollable screen (flex:1) and the nav
+   (flex-shrink:0, plain flow — never position:fixed on desktop). The
+   page body does not scroll; the screen does. */
+.shell,
+.phone-frame,
+.phone-screen {
+  display: contents;
+}
+.shell-aside {
+  display: none;
+}
+@media (min-width: 900px) {
+  body {
+    background: #f1eadf;
+    overflow: hidden; /* the frame is the only scroll region */
+  }
+  .shell {
+    display: flex;
+    flex-direction: column; /* lockup stacks above on narrower desktops */
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    height: 100vh;
+    padding: 1.5rem;
+  }
+  .shell-aside {
+    display: block;
+  }
+  .phone-frame {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 390px;
+    /* Room for the stacked lockup; ≥1150px (row layout) uses full 90vh */
+    height: min(844px, calc(90vh - 4rem));
+    overflow: hidden; /* rounded corners clip the scrolling content */
+    border-radius: 40px;
+    border: 1px solid #e6ddcf;
+    background: #fffbf7;
+    box-shadow: 0 24px 64px rgba(74, 36, 16, 0.16);
+  }
+  .phone-screen {
+    display: block;
+    position: relative; /* home top bar anchors here, scrolls with content */
+    flex: 1;
+    min-height: 0; /* required — flex children refuse to shrink without it */
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+  }
+  .phone-screen::-webkit-scrollbar {
+    display: none;
+  }
+}
+@media (min-width: 1150px) {
+  .shell {
+    flex-direction: row; /* lockup moves left of the frame */
+    gap: 2rem;
+  }
+  .phone-frame {
+    height: min(844px, 90vh);
+  }
+}
