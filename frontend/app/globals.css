@@ -295,3 +295,59 @@ body {
 .glass-ai .ai-text {
   color: #4a3a2e;
 }
+
+/* Desktop presentation shell. Below 900px both wrappers are inert
+   (display: contents) and the app renders full-bleed exactly as on a
+   phone; above it, the app sits in a device frame beside an info
+   column. Pure chrome — the app's own components are untouched. */
+.shell,
+.phone-frame {
+  display: contents;
+}
+.shell-aside {
+  display: none;
+}
+@media (min-width: 900px) {
+  body {
+    background: #f1eadf;
+  }
+  .shell {
+    display: flex;
+    flex-direction: column; /* aside stacks above on narrower desktops */
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem;
+  }
+  .shell-aside {
+    display: block;
+  }
+  .phone-frame {
+    display: block;
+    position: relative;
+    width: 390px;
+    height: min(844px, calc(100vh - 5rem));
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 40px;
+    border: 1px solid #e6ddcf;
+    background: #fffbf7;
+    box-shadow: 0 24px 64px rgba(74, 36, 16, 0.16);
+    /* Containing block for the app's fixed/absolute bars: the bottom
+       nav pins to the frame, not the browser viewport */
+    transform: translateZ(0);
+    scrollbar-width: none;
+  }
+  .phone-frame::-webkit-scrollbar {
+    display: none;
+  }
+}
+@media (min-width: 1150px) {
+  .shell {
+    flex-direction: row; /* info column moves left of the frame */
+  }
+  .shell-aside {
+    max-width: 260px;
+  }
+}

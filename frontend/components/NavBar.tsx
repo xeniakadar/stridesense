@@ -4,7 +4,12 @@ import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useDemoMode } from "@/components/DemoProvider";
+import { Logo } from "@/components/Logo";
+import { Chip } from "@/components/ui";
+
 export function NavBar() {
+  const demoMode = useDemoMode();
   // On the homepage the bar floats transparent over the full-bleed hero
   // mesh and scrolls away with it; everywhere else it's the sticky
   // near-white bar.
@@ -18,9 +23,21 @@ export function NavBar() {
           : "sticky top-0 z-20 bg-cream/90 backdrop-blur-sm"
       }
     >
-      {/* No wordmark up top — the bar is just the actions, pushed clear
-          of the iPhone status bar / notch by the safe-area inset */}
-      <div className="max-w-md mx-auto px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-end">
+      <div className="max-w-md mx-auto px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between">
+        <span className="flex items-center gap-2">
+          <Link href="/" className="tap-target">
+            <Logo size={16} />
+          </Link>
+          {/* Deployed-demo marker only — never renders on a real install */}
+          {demoMode && (
+            <Chip
+              tone="custom"
+              className="bg-amber-50 text-amber-800 border border-amber-200"
+            >
+              Demo · seeded data
+            </Chip>
+          )}
+        </span>
         {/* Settings and add-run stay visible in demo as a showcase; the
             pages themselves neutralize any state-changing action. */}
         <nav className="flex items-center gap-1.5">
