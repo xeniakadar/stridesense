@@ -16,7 +16,7 @@ from app.schemas.analytics import (
     MonthlyVolumePoint,
     RecordRead,
 )
-from app.services import list_runs
+from app.services import latest_run_date, list_runs
 from app.services.cities import cluster_cities
 from app.services.records import compute_records
 from app.services.training_load import compute_load_series
@@ -29,9 +29,11 @@ async def weekly_mileage(
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
 ) -> list[dict]:
-    """Total km per ISO week for the last 12 weeks."""
-    today = date.today()
-    cutoff = today - timedelta(weeks=12)
+    """Total km per ISO week for the 12 weeks ending in the week of the
+    user's latest run (see latest_run_date)."""
+    anchor = await latest_run_date(session, user_id)
+    anchor_monday = anchor - timedelta(days=anchor.weekday())
+    cutoff = anchor_monday - timedelta(weeks=11)
 
     result = await session.execute(
         select(Run).where(Run.user_id == user_id, Run.date >= cutoff)
@@ -46,16 +48,14 @@ async def weekly_mileage(
 
     # Fill in empty weeks so the chart doesn't have gaps
     output = []
-    current_monday = today - timedelta(days=today.weekday())
     for i in range(11, -1, -1):
-        week_start = current_monday - timedelta(weeks=i)
+        week_start = anchor_monday - timedelta(weeks=i)
         output.append(
             {
                 "week_start": week_start.isoformat(),
                 "distance_km": round(by_week.get(week_start, 0.0), 2),
             }
         )
-
 
     return output
 
@@ -65,8 +65,10 @@ async def pace_trend(
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
 ) -> list[dict]:
-    """Average pace for easy runs over the last 90 days, by date."""
-    cutoff = date.today() - timedelta(days=90)
+    """Average pace for easy runs over the 90 days ending at the user's
+    latest run, by date."""
+    anchor = await latest_run_date(session, user_id)
+    cutoff = anchor - timedelta(days=90)
 
     result = await session.execute(
         select(Run).where(
@@ -92,8 +94,9 @@ async def run_type_distribution(
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
 ) -> list[dict]:
-    """Run-type breakdown for the last 30 days."""
-    cutoff = date.today() - timedelta(days=30)
+    """Run-type breakdown for the 30 days ending at the user's latest run."""
+    anchor = await latest_run_date(session, user_id)
+    cutoff = anchor - timedelta(days=30)
 
     result = await session.execute(
         select(Run).where(Run.user_id == user_id, Run.date >= cutoff)
@@ -122,11 +125,11 @@ async def monthly_volume(
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
 ) -> list[MonthlyVolumePoint]:
-    """Total km per calendar month for the last 12 months, empty months
-    included."""
-    today = date.today()
+    """Total km per calendar month for the 12 months ending in the month of
+    the user's latest run, empty months included."""
+    anchor = await latest_run_date(session, user_id)
     months: list[date] = []
-    year, month = today.year, today.month
+    year, month = anchor.year, anchor.month
     for _ in range(12):
         months.append(date(year, month, 1))
         month -= 1
@@ -162,9 +165,10 @@ async def glucose_trend(
     session: AsyncSession = Depends(get_session),
     user_id: UUID = Depends(get_current_user_id),
 ) -> list[GlucoseTrendPoint]:
-    """Daily time-in-range % for the last 90 days; empty when the user has
-    no glucose data at all."""
-    cutoff = date.today() - timedelta(days=90)
+    """Daily time-in-range % for the 90 days ending at the user's latest
+    run; empty when the user has no glucose data at all."""
+    anchor = await latest_run_date(session, user_id)
+    cutoff = anchor - timedelta(days=90)
     result = await session.execute(
         select(GlucoseDailyRecord)
         .where(

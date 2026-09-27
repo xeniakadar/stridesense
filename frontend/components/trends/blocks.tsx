@@ -193,7 +193,11 @@ function TrainingLoadBlock() {
   }, []);
 
   const days = LOAD_RANGES.find((r) => r.key === range)?.days ?? null;
-  const cutoff = days ? new Date(Date.now() - days * 86_400_000) : null;
+  // Anchor the window on the series' own last point, not today: a stale
+  // series would otherwise filter down to nothing.
+  const last = load?.at(-1);
+  const anchor = last ? new Date(last.date).getTime() : Date.now();
+  const cutoff = days ? new Date(anchor - days * 86_400_000) : null;
   const filtered =
     load === null
       ? null

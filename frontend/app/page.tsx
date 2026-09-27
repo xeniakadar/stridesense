@@ -1,5 +1,6 @@
 "use client";
 
+import { addDays, parseISO } from "date-fns";
 import { Info } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -14,6 +15,7 @@ import { CARD_TITLES } from "@/lib/cards";
 import {
   cityFromCoords,
   formatDate,
+  formatDateShort,
   formatDistance,
   formatKmTotal,
   RUN_TYPE_LABELS,
@@ -61,12 +63,29 @@ export default function DashboardPage() {
       .catch(() => setLoad(null));
   }, []);
 
-  const thisWeek = mileage?.at(-1);
-  const weekStart = thisWeek ? new Date(thisWeek.week_start) : null;
+  // The backend anchors the series on the latest run, so the last bar is
+  // "the most recent week with data" — only "this week" when it contains
+  // today. Stale demos and post-break returns otherwise show the real
+  // latest week, labelled by its Monday.
+  const latestWeek = mileage?.at(-1);
+  const weekStart = latestWeek ? parseISO(latestWeek.week_start) : null;
+  const weekEnd = weekStart ? addDays(weekStart, 7) : null; // exclusive
+  const inWeek = (iso: string) =>
+    weekStart !== null &&
+    weekEnd !== null &&
+    parseISO(iso) >= weekStart &&
+    parseISO(iso) < weekEnd;
+  const isCurrentWeek =
+    weekStart !== null &&
+    weekEnd !== null &&
+    Date.now() >= weekStart.getTime() &&
+    Date.now() < weekEnd.getTime();
+  const weekLabel =
+    latestWeek && !isCurrentWeek
+      ? `week of ${formatDateShort(latestWeek.week_start)}`
+      : "this week";
   const runsThisWeek =
-    runs && weekStart
-      ? runs.filter((r) => new Date(r.date) >= weekStart).length
-      : null;
+    runs && weekStart ? runs.filter((r) => inWeek(r.date)).length : null;
   const recent = runs?.slice(0, 3) ?? [];
   const rec = load?.zone ? TODAY_RECS[load.zone] : null;
 
@@ -94,9 +113,9 @@ export default function DashboardPage() {
           )}
         </div>
         <p className="mt-3 text-5xl font-medium text-ink leading-none">
-          {thisWeek ? formatKmTotal(thisWeek.distance_km) : "— km"}{" "}
+          {latestWeek ? formatKmTotal(latestWeek.distance_km) : "— km"}{" "}
           <span className="text-sm font-normal text-clay-hero">
-            this week
+            {weekLabel}
             {runsThisWeek !== null
               ? ` · ${runsThisWeek} run${runsThisWeek === 1 ? "" : "s"}`
               : ""}
