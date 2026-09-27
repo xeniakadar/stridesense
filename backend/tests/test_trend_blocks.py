@@ -188,3 +188,87 @@ async def test_glucose_trend_empty_without_data(
     res = await client.get("/analytics/glucose-trend")
     assert res.status_code == 200
     assert res.json() == []
+
+
+# --- window anchoring: latest run, not today ---
+
+
+async def test_windows_anchor_on_latest_run_when_data_is_stale(
+    client: AsyncClient, session: AsyncSession, isolated_user
+) -> None:
+    # Newest run is 6 weeks old: anchored on today, every window would
+    # render as zeros / empty. Anchored on the latest run, they all fill.
+    anchor = date.today() - timedelta(weeks=6)
+    anchor_monday = anchor - timedelta(days=anchor.weekday())
+    await client.post("/runs", json=_run_payload(anchor, 10.0, 3600))
+    await client.post("/runs", json=_run_payload(anchor_monday, 5.0, 1800))
+    # 20 days before the anchor: inside the 30-day window, outside today's
+    mid = anchor - timedelta(days=20)
+    await client.post("/runs", json=_run_payload(mid, 8.0, 2880))
+    # 80 days before the anchor: inside the 90-day window, outside today's
+    old = anchor - timedelta(days=80)
+    await client.post("/runs", json=_run_payload(old, 6.0, 2160))
+    session.add_all(
+        [
+            GlucoseDailyRecord(
+                user_id=isolated_user.id,
+                date=old,
+                source=DataSource.MANUAL,
+                time_in_range_pct=88.0,
+            ),
+            # Outside even the anchored 90-day window
+            GlucoseDailyRecord(
+                user_id=isolated_user.id,
+                date=anchor - timedelta(days=100),
+                source=DataSource.MANUAL,
+                time_in_range_pct=70.0,
+            ),
+        ]
+    )
+    await session.commit()
+
+    weekly = (await client.get("/analytics/weekly-mileage")).json()
+    assert len(weekly) == 12
+    assert weekly[-1]["week_start"] == anchor_monday.isoformat()
+    assert weekly[-1]["distance_km"] == 15.0
+    mid_monday = mid - timedelta(days=mid.weekday())
+    by_week = {w["week_start"]: w["distance_km"] for w in weekly}
+    assert by_week[mid_monday.isoformat()] == 8.0
+
+    pace = (await client.get("/analytics/pace-trend")).json()
+    assert [p["date"] for p in pace][0] == old.isoformat()
+    assert len(pace) == 4
+
+    types = (await client.get("/analytics/run-type-distribution")).json()
+    assert types == [{"run_type": "easy", "count": 3, "total_distance_km": 23.0}]
+
+    monthly = (await client.get("/analytics/monthly-volume")).json()
+    assert len(monthly) == 12
+    anchor_month = date(anchor.year, anchor.month, 1)
+    assert monthly[-1]["month"] == anchor_month.isoformat()
+    expected = sum(
+        km
+        for d, km in ((anchor, 10.0), (anchor_monday, 5.0), (mid, 8.0), (old, 6.0))
+        if (d.year, d.month) == (anchor.year, anchor.month)
+    )
+    assert monthly[-1]["distance_km"] == round(expected, 2)
+
+    glucose = (await client.get("/analytics/glucose-trend")).json()
+    assert glucose == [{"date": old.isoformat(), "time_in_range_pct": 88.0}]
+
+
+async def test_windows_anchor_on_today_without_runs(
+    client: AsyncClient, isolated_user
+) -> None:
+    today = date.today()
+    this_monday = today - timedelta(days=today.weekday())
+
+    weekly = (await client.get("/analytics/weekly-mileage")).json()
+    assert len(weekly) == 12
+    assert weekly[-1]["week_start"] == this_monday.isoformat()
+    assert all(w["distance_km"] == 0.0 for w in weekly)
+
+    monthly = (await client.get("/analytics/monthly-volume")).json()
+    assert len(monthly) == 12
+    assert monthly[-1]["month"] == date(today.year, today.month, 1).isoformat()
+    assert all(m["distance_km"] == 0.0 for m in monthly)

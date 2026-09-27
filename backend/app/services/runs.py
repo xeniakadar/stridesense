@@ -1,6 +1,7 @@
+from datetime import date
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Run
@@ -76,6 +77,22 @@ async def list_runs(
         .limit(limit)
     )
     return list(result.scalars().all())
+
+
+async def latest_run_date(session: AsyncSession, user_id: UUID) -> date:
+    """Anchor date for every trend window: the user's most recent run date.
+
+    Windows measured back from today collapse to zeros as soon as the
+    newest run is older than the window (a stale demo, or a runner back
+    from a break). Anchoring on the latest run keeps the charts showing
+    the most recent data there is. Falls back to today when the user has
+    no runs at all.
+    """
+    result = await session.execute(
+        select(func.max(Run.date)).where(Run.user_id == user_id)
+    )
+    latest = result.scalar_one_or_none()
+    return latest if latest is not None else date.today()
 
 
 async def update_run(
